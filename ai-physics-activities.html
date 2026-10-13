@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>פיזיקה עם בינה מלאכותית</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#1b2333; --muted:#5d6779; --line:#d9deea; --grid:#e6e9f1;
+  --accent:#2f5bd3; --accent-ink:#ffffff; --accent-soft:#e3eafc;
+  --mech:#2f5bd3; --em:#b4530b; --rad:#7a3fc2;
+  --ok:#1f8a4c; --warn:#b7791f;
+  --s1:#2f5bd3; --s2:#d1495b; --s3:#1f8a4c; --s4:#b7791f;
+  --shadow:0 1px 3px rgba(20,30,60,.08),0 4px 14px rgba(20,30,60,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11141b; --surface:#1a1f2a; --surface2:#232a38; --ink:#e7ebf3; --muted:#9aa4b8; --line:#2f384a; --grid:#2a3242;
+    --accent:#7d9cff; --accent-ink:#0e1320; --accent-soft:#25304a;
+    --mech:#7d9cff; --em:#f0a35e; --rad:#c49bff;
+    --ok:#5fd08f; --warn:#e8b65a;
+    --s1:#7d9cff; --s2:#ff7b8b; --s3:#5fd08f; --s4:#e8b65a;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11141b; --surface:#1a1f2a; --surface2:#232a38; --ink:#e7ebf3; --muted:#9aa4b8; --line:#2f384a; --grid:#2a3242;
+  --accent:#7d9cff; --accent-ink:#0e1320; --accent-soft:#25304a;
+  --mech:#7d9cff; --em:#f0a35e; --rad:#c49bff;
+  --ok:#5fd08f; --warn:#e8b65a;
+  --s1:#7d9cff; --s2:#ff7b8b; --s3:#5fd08f; --s4:#e8b65a;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,"Noto Sans Hebrew",sans-serif;line-height:1.65;font-size:16px}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;justify-content:space-between;padding-top:18px;padding-bottom:18px;flex-wrap:wrap}
+h1{font-size:1.55rem;margin:0;line-height:1.3}
+.sub{color:var(--muted);margin:2px 0 0;font-size:.95rem}
+.progress{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--muted)}
+.bar{width:140px;height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);width:0}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 14px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:4px 10px;font-size:.88rem}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding:20px 0 40px}
+.intro{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 18px;margin-bottom:18px}
+.intro summary{cursor:pointer;font-weight:600;padding:10px 0}
+.intro ol{padding-inline-start:20px;margin:6px 0 10px}
+.note{background:var(--accent-soft);border-radius:10px;padding:10px 14px;margin:10px 0 14px;font-size:.95rem}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search{flex:1 1 220px;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 13px;cursor:pointer;font-size:.92rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.group-title{font-size:1.1rem;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;box-shadow:var(--shadow);text-align:start;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .12s,border-color .12s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card .ch{font-size:.8rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.card h3{margin:0;font-size:1.03rem;line-height:1.35}
+.card p{margin:0;color:var(--muted);font-size:.9rem}
+.card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px}
+.badge{font-size:.78rem;border-radius:99px;padding:2px 9px;background:var(--surface2);color:var(--muted)}
+.badge.prog{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.badge.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.star{border:none;background:none;cursor:pointer;font-size:1.2rem;line-height:1;color:var(--muted);padding:2px 4px}
+.star[aria-pressed="true"]{color:#e0a100}
+.empty{color:var(--muted);padding:20px;text-align:center}
+/* detail */
+.detail-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.detail-head h2{margin:4px 0 2px;font-size:1.45rem;line-height:1.3}
+.detail-head .en{color:var(--muted);font-size:.92rem;direction:ltr;unicode-bidi:isolate}
+.crumbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin:12px 0 0;scrollbar-width:thin}
+.tab{border:none;background:none;padding:9px 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;color:var(--muted);font-size:.95rem}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;padding:18px 20px 22px}
+.panel h3{font-size:1.08rem;margin:16px 0 6px}
+.panel h3:first-child{margin-top:0}
+.panel p{margin:0 0 8px}
+.kv{display:grid;gap:10px}
+.kv > div{background:var(--surface2);border-radius:10px;padding:10px 14px}
+.kv b{display:block;margin-bottom:2px}
+.f{direction:ltr;unicode-bidi:isolate;font-family:Consolas,"Cascadia Mono",monospace;font-size:.93em;white-space:nowrap}
+.prompt{position:relative;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 14px 12px 14px;margin:8px 0}
+.prompt pre{margin:0;white-space:pre-wrap;word-wrap:break-word;font-family:Consolas,"Cascadia Mono",monospace;font-size:.9rem;direction:ltr;text-align:left}
+.prompt .he{margin-top:8px;color:var(--muted);font-size:.93rem}
+.prompt .copy{position:absolute;top:8px;left:8px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.steps li{background:var(--surface2);border-radius:10px;padding:12px 14px}
+.steps label.chk{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer;margin-bottom:4px}
+.steps input[type=checkbox],.chkrow input{width:18px;height:18px;accent-color:var(--ok)}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.matrix > div{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+.matrix .b{background:var(--surface2)}
+.matrix .a{background:var(--accent-soft)}
+.matrix b{display:block;margin-bottom:4px}
+.metrics{padding-inline-start:20px;margin:6px 0}
+.chkrow{display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:600;cursor:pointer}
+textarea.nb{width:100%;min-height:220px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);resize:vertical}
+.saved{font-size:.85rem;color:var(--ok);min-height:1.2em}
+.nav-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:16px;flex-wrap:wrap}
+/* sim */
+.sim-ctrls{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 18px;margin-bottom:10px}
+.ctrl label{display:flex;justify-content:space-between;gap:8px;font-size:.9rem}
+.ctrl output{font-family:Consolas,monospace;direction:ltr;unicode-bidi:isolate;color:var(--accent)}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctrl select{width:100%;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface)}
+.sim-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.sim-view{display:grid;gap:10px}
+canvas.cv{width:100%;height:290px;background:var(--surface);border:1px solid var(--line);border-radius:10px;display:block}
+canvas.cv.plot{height:250px}
+.readout{background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:.93rem}
+.readout:empty{display:none}
+.tasks{padding-inline-start:20px}
+footer{color:var(--muted);font-size:.88rem;padding:20px 0 30px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center}
+.hidden{display:none !important}
+@media (max-width:640px){
+  h1{font-size:1.3rem}
+  .panel{padding:14px 14px 18px}
+  .matrix{grid-template-columns:1fr}
+  canvas.cv{height:240px}
+  canvas.cv.plot{height:210px}
+  .bar{width:90px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>פיזיקה מתקדמת עם בינה מלאכותית</h1>
+      <p class="sub">19 פעילויות, אחת לכל פרק בתכנית הלימודים לפיזיקה ברמת 5 יח"ל</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <span id="progText">0 / 19 הושלמו</span>
+      <span class="bar"><i id="progBar"></i></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="listView">
+    <details class="intro">
+      <summary>איך בנויה כל פעילות?</summary>
+      <p>כל פעילות בנויה לפי אותה תבנית בת חמישה חלקים:</p>
+      <ol>
+        <li><b>גבולות הלמידה המסורתית:</b> המושגים והנוסחאות של הפרק, וההנחות המפשטות שעליהן נשענת הלמידה הרגילה.</li>
+        <li><b>מתיחת הגבולות:</b> מערכת מורכבת יותר, שינוי של החוקים ומקרי קצה, שבהם הנוסחאות הסגורות כבר לא מספיקות.</li>
+        <li><b>דפוס השימוש ב-AI:</b> ה-AI כמחולל קוד וסימולציות, לצד "מבקר פיזיקלי" (איתור טעויות) ו"שותף לאימון" (דיון בשאלות).</li>
+        <li><b>מהלך הפעילות:</b> עבודה עצמאית, פרומפט מובנה ל-AI, ניתוח ביקורתי והערכת תקפות פיזיקלית.</li>
+        <li><b>ערך מוסף:</b> מה יודעים לפני ומה אחרי, ומדדי ההערכה של הפעילות.</li>
+      </ol>
+      <p>לכל פעילות יש גם סימולציה קטנה שרצה בדפדפן, ו"מחברת" אישית לתשובות. ההתקדמות, המחברת והמועדפים נשמרים בדפדפן שלכם בלבד.</p>
+      <div class="note"><b>חשוב:</b> תשובות של AI עלולות להיות שגויות או חסרות. המטרה של כל פעילות היא שתבדקו אותן בעזרת הידע הפיזיקלי שלכם: יחידות, מקרי קצה, סדרי גודל ושימור.</div>
+    </details>
+
+    <div class="toolbar">
+      <input id="search" class="search" type="search" placeholder="חיפוש פעילות, מושג או נושא..." aria-label="חיפוש">
+      <div class="chips" role="group" aria-label="סינון לפי נושא">
+        <button class="chip" data-f="all" aria-pressed="true">הכול</button>
+        <button class="chip" data-f="mech" aria-pressed="false">מכניקה</button>
+        <button class="chip" data-f="em" aria-pressed="false">אלקטרומגנטיות</button>
+        <button class="chip" data-f="rad" aria-pressed="false">קרינה וחומר</button>
+        <button class="chip" data-f="fav" aria-pressed="false">★ מועדפים</button>
+      </div>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <section id="detailView" class="hidden" aria-live="polite"></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>מבוסס על "תכנית הלימודים בפיזיקה לחטיבה העליונה, רמה מוגברת" (משרד החינוך) ועל תבנית "שילוב בינה מלאכותית בפעילויות פיזיקה מתקדמות".</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn small" id="exportBtn">שמירת המחברת כקובץ</button>
+      <button class="btn small" id="resetBtn">מחיקת הנתונים השמורים</button>
+    </span>
+  </div>
+</footer>
+
+<script>
+/* ============================== DATA ============================== */
+const SUBJ = {
+  mech:{name:'מכניקה', color:'var(--mech)'},
+  em:{name:'אלקטרומגנטיות', color:'var(--em)'},
+  rad:{name:'קרינה וחומר', color:'var(--rad)'}
+};
+const F = s => `<span class="f">${s}</span>`;
+
+const ACTS = [
+/* ---------------- MECHANICS ---------------- */
+{id:'m1', s:'mech', n:1, ch:'קינמטיקה', title:'נפילה עם התנגדות אוויר', en:'Kinematics: falling with air drag',
+ ref:'סעיפים 1.5–1.7: מהירות ותאוצה רגעיות, גיליון אלקטרוני',
+ short:'מה קורה לנפילה החופשית כשמכניסים את האוויר לתמונה? מהירות סופית ותאוצה שאינה קבועה.',
+ concepts:`מקום, מהירות ותאוצה רגעיות, תנועה בתאוצה קבועה, נפילה חופשית: ${F('v = v₀ + at')}, ${F('x = x₀ + v₀t + ½at²')}.`,
+ trad:`בכיתה מניחים שהתאוצה קבועה ושווה ל-${F('g')}, מזניחים את התנגדות האוויר ומתייחסים לגוף כאל נקודה. כל הגופים נופלים באותה תאוצה, וגרף מהירות-זמן הוא קו ישר. הנוסחאות סגורות ומתאימות לבעיה במשתנה אחד.`,
+ ext:{complex:`כוח התנגדות ריבועי ${F('F = k·v²')} הופך את התאוצה לתלויה במהירות. ארבע הנוסחאות של תאוצה קבועה כבר לא תקפות, ודרוש פתרון נומרי בצעדי זמן קטנים (שיטת אוילר), כפי שהתכנית ממליצה לעשות בגיליון אלקטרוני.`,
+      laws:`משוואת התנועה הופכת ל-${F('a = g − (k/m)·v²')}: התאוצה קטנה ככל שהגוף מהיר יותר, והיא תלויה במסה.`,
+      edge:`כש-${F('k → 0')} חוזרים לנפילה חופשית. כש-${F('t → ∞')} המהירות שואפת למהירות סופית ${F('vₜ = √(mg/k)')} והתאוצה לאפס. שני כדורים זהים בגודלם ושונים במסה כבר לא נופלים יחד.`},
+ ai:{main:`מבקשים מה-AI תוכנית Python שמחשבת צעד אחר צעד את המהירות של גוף נופל עם התנגדות אוויר, ומשרטטת את ${F('v(t)')} עם התנגדות ובלעדיה.`,
+     err:`קוד "של AI" שבו מופיעה השורה ${F('v = v + (g − k*v**2)*dt')}: חסרה החלוקה במסה. בדיקת יחידות חושפת את הטעות (ל-${F('k·v²')} יש יחידות של כוח, לא של תאוצה), והתוכנית "מוכיחה" בטעות שהמהירות הסופית אינה תלויה במסה.`,
+     spar:`"למה כדור פינג-פונג וכדור ברזל באותו גודל מגיעים למהירויות סופיות שונות, אם בריק הם נופלים יחד?"`},
+ steps:{self:`שרטטו גרפים של מקום-זמן ומהירות-זמן לנפילה חופשית מגובה 100 מ' בלי התנגדות, וחשבו את זמן הנפילה (${F('≈ 4.5 s')}) ואת המהירות בפגיעה בקרקע.`,
+   pe:`Write a Python program that simulates a ball of mass m = 0.1 kg falling from rest with quadratic air drag F = k·v², where k = 0.002 kg/m. Use Euler's method with a time step dt = 0.01 s. Plot v(t) with and without drag on the same graph for 0–10 s, print the terminal velocity, and explain each line of the code.`,
+   ph:`כתוב תוכנית Python המדמה כדור במסה 0.1 ק"ג הנופל ממנוחה עם התנגדות אוויר ריבועית F = k·v², כאשר k = 0.002 ק"ג/מ'. השתמש בשיטת אוילר עם צעד זמן של 0.01 ש'. שרטט על אותו גרף את v(t) עם התנגדות ובלעדיה בין 0 ל-10 ש', הדפס את המהירות הסופית והסבר כל שורה בקוד.`,
+   crit:`בדקו את היחידות של כל איבר במשוואה, את הסימן של כוח ההתנגדות (תמיד נגד כיוון התנועה) ואת השפעת צעד הזמן: הריצו שוב עם ${F('dt = 0.1 s')} ועם ${F('dt = 0.001 s')}. האם התוצאה משתנה? האם יש הנחות נסתרות?`,
+   valid:`ודאו שבשניות הראשונות שני הגרפים כמעט מתלכדים (השיפוע בהתחלה הוא ${F('g')}), שהמהירות שואפת ל-${F('√(mg/k) ≈ 22 m/s')} ולא חוצה אותה, ושהתאוצה (שיפוע המשיק) קטנה כל הזמן. הסבירו במילים למה צורת הגרף מתאימה לתנאים החדשים.`},
+ val:{before:`התלמידים פותרים בעיות נפילה בתאוצה קבועה בלבד. הם לא יכולים להסביר איך מצנח עובד או למה יש מהירות סופית, ולא תמיד יודעים מתי מותר להזניח את האוויר.`,
+   after:`התלמידים בונים מודל של תאוצה משתנה, פותרים אותו נומרית ומפרשים את שיפוע גרף מהירות-זמן כתאוצה רגעית (סעיף 1.7). הם יודעים לקבוע את תחום התקפות של נוסחאות התאוצה הקבועה.`,
+   m:[`הסבירו את טעות ה-AI (החלוקה החסרה במסה) בעזרת בדיקת יחידות, והציגו את התיקון.`,`נתחו את גרף ${F('v(t)')}: היכן התאוצה גדולה ביותר, ולמה היא שואפת לאפס?`,`קבעו עד איזו מהירות (באחוזים מ-${F('vₜ')}) נוסחאות התאוצה הקבועה נותנות שגיאה קטנה מ-5%.`]},
+ sim:'freefall', tasks:[`הזיזו את k לאפס וודאו ששני הגרפים מתלכדים.`,`הכפילו את המסה: פי כמה גדלה המהירות הסופית? (צפוי: פי √2)`,`מצאו בעזרת הסימולציה את הזמן שבו הגוף מגיע ל-90% מהמהירות הסופית.`]},
+
+{id:'m2', s:'mech', n:2, ch:'דינמיקה', title:'זריקה משופעת עם התנגדות אוויר', en:'Dynamics: projectile motion with drag',
+ ref:'סעיפים 2.8–2.9: יישום החוק השני, תנועה במישור בהשפעת כוח קבוע, פתרון נומרי',
+ short:'למה זווית של 45° כבר לא נותנת את הטווח המרבי, ולמה הירידה תלולה יותר מהעלייה?',
+ concepts:`החוק השני של ניוטון ${F('ΣF = ma')}, פירוק לרכיבים, זריקה אופקית ומשופעת, טווח ${F('R = v₀²·sin2α / g')}.`,
+ trad:`פועל רק כוח הכובד, ולכן התנועות בצירים בלתי תלויות זו בזו, המסלול פרבולי וסימטרי והטווח המרבי מתקבל ב-45°.`,
+ ext:{complex:`כוח התנגדות ${F('F = −k·|v|·v')} תלוי בגודל המהירות כולה, ולכן הוא מצמד את שני הצירים: התנועה האופקית כבר לא קצובה, ואין פתרון סגור.`,
+      laws:`כוח שתלוי במהירות במקום כוח קבוע. כתוצאה מכך הזווית האופטימלית קטנה מ-45° והמסלול אינו סימטרי.`,
+      edge:`כש-${F('k → 0')} חוזרים לפרבולה. בזריקה אנכית (90°) הטווח אפס. בהתנגדות גדולה מאוד הגוף "נבלם" אופקית ונופל כמעט אנכית בסוף המסלול.`},
+ ai:{main:`מבקשים מה-AI סימולציה של זריקה משופעת עם התנגדות אוויר, השוואה למסלול ללא התנגדות וחיפוש הזווית שנותנת טווח מרבי.`,
+     err:`ה-AI כותב ${F('ax = −k·vx²')} ו-${F('ay = −g − k·vy²')}. יש כאן שתי טעויות: הכוח צריך להיות ${F('−k·|v|·vx')} (תלוי בגודל המהירות כולה), ובירידה ${F('vy²')} חיובי, ולכן "ההתנגדות" דוחפת את הגוף כלפי מטה במקום לבלום אותו.`,
+     spar:`"למה בנוכחות התנגדות אוויר שיא הגובה נמצא אחרי מחצית הטווח, והירידה תלולה מהעלייה?"`},
+ steps:{self:`חשבו בעצמכם את הטווח ואת הגובה המרבי של גוף שנזרק במהירות 30 מ'/ש' בזווית 45° בלי התנגדות (${F('R ≈ 91.8 m')}, ${F('H ≈ 23 m')}), ושרטטו את רכיבי המהירות כפונקציה של הזמן.`,
+   pe:`Simulate a projectile launched at v0 = 30 m/s and an angle of 45° with quadratic air drag: the drag acceleration is a = −(k/m)·|v|·v with k/m = 0.01 1/m. Use small time steps, plot the trajectory with and without drag, and find the launch angle that gives the maximum range with drag. Provide Python code and explain how the drag force is split into x and y components.`,
+   ph:`הדמה גוף שנזרק במהירות 30 מ'/ש' בזווית 45° עם התנגדות אוויר ריבועית: תאוצת ההתנגדות היא a = −(k/m)·|v|·v עם k/m = 0.01 1/מ'. השתמש בצעדי זמן קטנים, שרטט את המסלול עם התנגדות ובלעדיה, ומצא את זווית הזריקה שנותנת טווח מרבי עם התנגדות. כתוב קוד Python והסבר איך כוח ההתנגדות מתפרק לרכיבי x ו-y.`,
+   crit:`בדקו שבכל רגע כוח ההתנגדות מנוגד לכיוון המהירות (גם בירידה), ושהרכיבים מחושבים בעזרת ${F('|v|')} ולא בנפרד לכל ציר. בדקו מה קורה כשמאפסים את k.`,
+   valid:`ודאו שהטווח עם התנגדות קטן מ-91.8 מ', שהזווית האופטימלית קטנה מ-45°, שהמסלול אינו סימטרי ושהמהירות האופקית קטנה כל הזמן. הסבירו את צורת המסלול בעזרת החוק השני.`},
+ val:{before:`התלמידים מחשבים טווח וגובה של זריקות "בריק" בלבד, ומשוכנעים ש-45° היא תמיד הזווית הטובה ביותר.`,
+   after:`התלמידים מבינים שכוח שתלוי במהירות מצמד בין הצירים, פותרים משוואת תנועה נומרית (סעיף 2.8.ג) ויודעים להסביר למה כדורים אמיתיים, כמו כדורגל או כדור גולף, לא נעים בפרבולה.`,
+   m:[`הסבירו בפירוט את שתי הטעויות בקוד ה-AI והציגו קוד מתוקן.`,`נתחו את המסלול: היכן נמצא שיא הגובה ביחס למחצית הטווח, ולמה?`,`קבעו עד איזה ערך של k/m המסלול הפרבולי מקרב את הטווח בשגיאה קטנה מ-5%.`]},
+ sim:'projectile', tasks:[`אפסו את k/m ובדקו שהזווית האופטימלית חוזרת ל-45°.`,`העלו את k/m ועקבו אחרי ירידת הזווית האופטימלית.`,`השוו את מיקום שיא הגובה למחצית הטווח.`]},
+
+{id:'m3', s:'mech', n:3, ch:'התנע ושימורו', title:'התנגשות עם פגוש קפיצי', en:'Momentum: a collision as a process in time',
+ ref:'סעיפים 3.1–3.3: מתקף ותנע, שימור התנע, התנגשויות (ניסוי "מזלג עם גומייה")',
+ short:'מה קורה בתוך ההתנגשות עצמה? מעקב אחרי התנע והאנרגיה במילישניות של המגע.',
+ concepts:`מתקף ${F('J = F·Δt')}, תנע ${F('p = mv')}, ${F('J = Δp')}, שימור תנע במערכת סגורה, התנגשות אלסטית ופלסטית.`,
+ trad:`ההתנגשות נחשבת רגעית ומטפלים רק במצב "לפני" ובמצב "אחרי". הכוח במהלך המגע לא מעניין, והאנרגיה הקינטית נשמרת במלואה (אלסטית) או שהגופים נצמדים (פלסטית).`,
+ ext:{complex:`ההתנגשות כתהליך בזמן: לעגלה השנייה יש פגוש קפיצי, והכוח ביניהן משתנה במהלך המגע. התנועה מחושבת בצעדי זמן קטנים.`,
+      laws:`מוסיפים לפגוש ריסון (מקדם ${F('c')}), שהופך את ההתנגשות לאי-אלסטית חלקית. מגדירים את מקדם ההשבה ${F('e')} = (מהירות ההתרחקות)/(מהירות ההתקרבות).`,
+      edge:`כש-${F('m₂ ≫ m₁')} (כמו קיר) העגלה הראשונה חוזרת לאחור. כש-${F('m₁ = m₂')} ובלי ריסון, העגלות מחליפות מהירויות. בריסון חזק ההתנגשות כמעט פלסטית.`},
+ ai:{main:`מבקשים מה-AI סימולציה של שתי עגלות שמתנגשות דרך פגוש קפיצי עם ריסון, עם גרפים של המהירויות, התנע הכולל והאנרגיה הקינטית הכוללת.`,
+     err:`ה-AI מחשב את התנע הכולל כ-${F('m1*abs(v1) + m2*abs(v2)')}, כלומר בעזרת גודל המהירות ולא בעזרת המהירות עם סימן. התוצאה: "התנע אינו נשמר" ברגע שאחת העגלות חוזרת לאחור. התלמידים צריכים להבין שתנע הוא וקטור.`,
+     spar:`"באמצע ההתנגשות האנרגיה הקינטית הכוללת קטנה, גם כשאין ריסון. לאן היא הולכת? והאם גם התנע קטן באותו רגע?"`},
+ steps:{self:`חשבו בעצמכם את המהירויות הסופיות של שתי עגלות במסה 1 ק"ג (האחת במהירות 2 מ'/ש' והשנייה במנוחה) בהתנגשות אלסטית ובהתנגשות פלסטית, ואת אחוז האנרגיה הקינטית שאובד בהתנגשות הפלסטית.`,
+   pe:`Simulate a 1D collision between two carts: m1 = 1 kg moving at 2 m/s and m2 = 1 kg at rest. Cart 2 has a spring bumper with spring constant k = 200 N/m and damping coefficient c. Integrate the motion with small time steps during the contact (the bumper can only push, never pull). Plot v1(t), v2(t), the total momentum and the total kinetic energy, and compute the coefficient of restitution for c = 0, 2 and 5 N·s/m. Give Python code and an explanation.`,
+   ph:`הדמה התנגשות חד-ממדית בין שתי עגלות: m1 = 1 ק"ג במהירות 2 מ'/ש' ו-m2 = 1 ק"ג במנוחה. לעגלה השנייה פגוש קפיצי עם קבוע קפיץ 200 נ'/מ' ומקדם ריסון c. חשב את התנועה בצעדי זמן קטנים בזמן המגע (הפגוש יכול רק לדחוף, לא למשוך). שרטט את v1(t), v2(t), התנע הכולל והאנרגיה הקינטית הכוללת, וחשב את מקדם ההשבה עבור c = 0, 2 ו-5 נ'·ש'/מ'. כתוב קוד Python והסבר.`,
+   crit:`ודאו שהתנע מחושב עם סימנים, שהכוחות על שתי העגלות שווים ומנוגדים (החוק השלישי) ושהפגוש לא "מושך". בדקו מה קורה לתוצאה כשמקטינים את צעד הזמן.`,
+   valid:`התנע הכולל צריך להיות קו אופקי לכל אורך הזמן, כי הכוחות פנימיים. האנרגיה הקינטית יורדת בזמן המגע וחוזרת (בלי ריסון) או לא חוזרת במלואה (עם ריסון). השטח מתחת לגרף כוח-זמן שווה לשינוי התנע של כל עגלה.`},
+ val:{before:`התלמידים מציבים בנוסחאות "לפני ואחרי" ולא מבינים מה קורה בזמן ההתנגשות או לאן נעלמת האנרגיה.`,
+   after:`התלמידים רואים את המתקף כשטח מתחת לגרף כוח-זמן, מבחינים בין שימור תנע (תמיד, במערכת סגורה) לבין שימור אנרגיה קינטית, ומבינים שאנרגיה נאגרת זמנית בקפיץ.`,
+   m:[`הסבירו למה חישוב התנע בעזרת ערך מוחלט שגוי, והציגו את התיקון.`,`נתחו את גרף האנרגיה: מה קורה לה בזמן המגע, ולמה התנע לא מתנהג כך?`,`הגדירו מתי מותר להניח שההתנגשות "רגעית", בהשוואה למשך המגע שהתקבל.`]},
+ sim:'collision', tasks:[`קבעו c = 0 ומסות שוות: האם העגלות מחליפות מהירויות?`,`הגדילו את c ועקבו אחרי מקדם ההשבה ואחרי אחוז האנרגיה שאבד.`,`הגדילו מאוד את m₂: מה קורה לעגלה הראשונה?`]},
+
+{id:'m4', s:'mech', n:4, ch:'אנרגיה מכנית ושימורה', title:'קפיץ עם חיכוך', en:'Energy: a spring oscillator with friction',
+ ref:'סעיפים 4.1–4.3: עבודה ואנרגיה, אנרגיה פוטנציאלית אלסטית, עבודת כוח החיכוך',
+ short:'לאן הולכת האנרגיה המכנית, ולמה המשרעת קטנה בקצב קבוע ולא באחוז קבוע?',
+ concepts:`אנרגיה קינטית ${F('Eₖ = ½mv²')}, אנרגיה אלסטית ${F('U = ½kx²')}, משפט עבודה-אנרגיה, שימור אנרגיה מכנית, עבודת חיכוך.`,
+ trad:`מערכות ללא חיכוך: האנרגיה המכנית נשמרת והתנודה נמשכת לנצח. חיכוך מופיע רק בחישוב עבודה בתנועה בקו ישר.`,
+ ext:{complex:`גוף על קפיץ אופקי עם חיכוך קינטי וסטטי: התנודה דועכת ובסוף נעצרת, לא בהכרח בנקודת שיווי המשקל.`,
+      laws:`כוח חיכוך קבוע בגודלו ${F('f = μmg')} שכיוונו מתהפך עם כיוון המהירות, ותנאי עצירה ${F('k|x| ≤ μmg')}.`,
+      edge:`כש-${F('μ = 0')} האנרגיה נשמרת. כש-${F('μ')} גדול מספיק הגוף לא זז בכלל. הגוף יכול להיעצר רחוק מנקודת שיווי המשקל.`},
+ ai:{main:`מבקשים מה-AI סימולציה של גוף על קפיץ עם חיכוך, עם גרפים של המקום ושל סוגי האנרגיה, ובדיקה של מאזן האנרגיה.`,
+     err:`ה-AI כותב את כוח החיכוך כ-${F('f = −μ·m·g·v')}, כלומר כוח שגדל עם המהירות (כמו ריסון צמיג). התוצאה היא דעיכה מעריכית במקום דעיכה ליניארית, והגוף אף פעם לא נעצר לגמרי.`,
+     spar:`"למה בחיכוך יבש המשרעת קטנה באותה כמות בכל חצי מחזור, ולא באותו אחוז?"`},
+ steps:{self:`חשבו את האנרגיה האלסטית ההתחלתית של קפיץ (${F('k = 20 N/m')}) שנמתח 0.3 מ' (${F('0.9 J')}), והעריכו את הדרך הכוללת שגוף במסה 1 ק"ג יעבור עד לעצירה כשמקדם החיכוך הוא 0.1.`,
+   pe:`Simulate a 1 kg block attached to a horizontal spring (k = 20 N/m), released from rest at x0 = 0.3 m on a surface with kinetic friction coefficient μ = 0.1. Model friction as a force of constant magnitude μ·m·g opposing the velocity, and make the block stop when the spring force cannot overcome static friction. Plot x(t), the kinetic energy, the spring potential energy and the total mechanical energy. Provide Python code and check that the lost mechanical energy equals the work done by friction.`,
+   ph:`הדמה גוף במסה 1 ק"ג המחובר לקפיץ אופקי (20 נ'/מ'), שמשוחרר ממנוחה ב-x = 0.3 מ' על משטח עם מקדם חיכוך קינטי 0.1. מדל את החיכוך ככוח קבוע בגודלו μ·m·g שמנוגד למהירות, ועצור את הגוף כשכוח הקפיץ לא מצליח להתגבר על החיכוך הסטטי. שרטט את x(t), האנרגיה הקינטית, האנרגיה האלסטית והאנרגיה המכנית הכוללת. כתוב קוד Python ובדוק שהאנרגיה המכנית שאבדה שווה לעבודת החיכוך.`,
+   crit:`בדקו את כיוון כוח החיכוך, את תנאי העצירה ואת מה שקורה כשהמהירות מתאפסת לרגע בנקודות הקיצון. האם הגוף "רועד" סביב אפס בגלל הקוד?`,
+   valid:`המשרעת צריכה לקטון בכל חצי מחזור ב-${F('2μmg/k ≈ 0.098 m')}. האנרגיה המכנית יורדת ואף פעם לא עולה, וההפרש שווה ל-${F('μmg')} כפול הדרך הכוללת.`},
+ val:{before:`התלמידים יודעים לחשב שימור אנרגיה רק במערכות "חלקות", ונוטים לחשוב שאנרגיה "נעלמת" כשיש חיכוך.`,
+   after:`התלמידים מנהלים מאזן אנרגיה מלא (סעיף 4.3.ג), מבחינים בין שימור אנרגיה לשימור אנרגיה מכנית, ומבינים את ההבדל בין חיכוך יבש לריסון צמיג.`,
+   m:[`הסבירו למה המודל של ה-AI (חיכוך שתלוי במהירות) נותן דעיכה מעריכית, ולמה זו טעות כאן.`,`נתחו את גרף האנרגיות: היכן האנרגיה המכנית יורדת מהר, ולמה?`,`קבעו מתי מותר להזניח את החיכוך, בהשוואה בין ${F('μmg')} לכוח הקפיץ המרבי.`]},
+ sim:'springfric', tasks:[`אפסו את μ: האם האנרגיה המכנית נשמרת?`,`מדדו את ירידת המשרעת בין שני קיצונים עוקבים והשוו ל-2μmg/k.`,`מצאו ערך של μ שבו הגוף לא זז בכלל.`]},
+
+{id:'m5', s:'mech', n:5, ch:'מודל הגז האידאלי', title:'חלקיקים בקופסה', en:'Ideal gas: particles in a box',
+ ref:'סעיפים 5.1–5.2: הנחות המודל הקינטי, פיתוח הביטוי ללחץ, משוואת המצב',
+ short:'בונים גז מחלקיקים ומודדים את הלחץ ישירות מהמכות בדפנות. מה משתנה כשלחלקיקים יש גודל?',
+ concepts:`לחץ, טמפרטורה כמדד לאנרגיה הקינטית הממוצעת, המודל הקינטי, ${F('pV = NkT')}, ${F('p = Nmv²/3V')}.`,
+ trad:`החלקיקים נקודתיים, אין ביניהם אינטראקציות, ההתנגשויות עם הדפנות אלסטיות, ובפיתוח בכיתה מניחים לעיתים שלכל החלקיקים אותה מהירות.`,
+ ext:{complex:`סימולציה דו-ממדית של עשרות חלקיקים שמתנגשים בדפנות ובינם לבין עצמם. הלחץ נמדד מהתנע שהחלקיקים מעבירים לדפנות. בדו-ממד משוואת המצב היא ${F('p·A = N·kT')}, כאשר ${F('kT')} שווה לאנרגיה הקינטית הממוצעת.`,
+      laws:`לחלקיקים יש רדיוס סופי, ולכן הגז "ממשי": המקום הפנוי קטן והלחץ גדל מעבר לניבוי האידאלי (רעיון תיקון ואן דר ואלס, באופן איכותי).`,
+      edge:`במספר חלקיקים קטן הלחץ "קופץ" (תנודות סטטיסטיות). בצפיפות גבוהה הסטייה מהגז האידאלי גדלה. גם אם כל החלקיקים מתחילים באותה מהירות, ההתנגשויות יוצרות פיזור של מהירויות.`},
+ ai:{main:`מבקשים מה-AI לבנות סימולציה של חלקיקים בקופסה, למדוד את הלחץ ולהשוות למשוואת המצב.`,
+     err:`ה-AI מחשב את המתקף בכל פגיעה בדופן כ-${F('m·v')} במקום ${F('2·m·v')}, ומקבל לחץ שקטן פי 2 מהניבוי. במקרה אחר הוא משתמש בנוסחה התלת-ממדית ${F('Eₖ = 3/2·kT')} בסימולציה דו-ממדית.`,
+     spar:`"אם כל מולקולה נעה במהירות אחרת ופוגעת בדופן ברגעים אקראיים, למה הלחץ על הדופן כמעט קבוע?"`},
+ steps:{self:`פתחו בעצמכם את הביטוי ללחץ של גז אידאלי, ${F('p = Nmv²/(3V)')}, בעזרת השינוי בתנע של מולקולה הפוגעת בדופן (כמו בתרגיל 23 בתכנית).`,
+   pe:`Write a Python simulation of N = 100 identical particles moving in a 2D box, with elastic collisions with the walls and with each other (particle radius r). Measure the pressure from the momentum transferred to the walls per unit time and per unit wall length, compare it with the ideal-gas prediction P·A = N·k·T (in 2D, k·T equals the average kinetic energy), and show how the ratio changes as r increases. Explain the physics behind each step.`,
+   ph:`כתוב סימולציית Python של 100 חלקיקים זהים הנעים בקופסה דו-ממדית, עם התנגשויות אלסטיות בדפנות וביניהם (רדיוס חלקיק r). מדוד את הלחץ מהתנע שעובר לדפנות ליחידת זמן וליחידת אורך דופן, השווה לניבוי של הגז האידאלי P·A = N·k·T (בדו-ממד kT שווה לאנרגיה הקינטית הממוצעת), והראה איך היחס משתנה כש-r גדל. הסבר את הפיזיקה של כל שלב.`,
+   crit:`בדקו את המקדם 2 בשינוי התנע, את ההבדל בין דו-ממד לתלת-ממד, ואת זמן המיצוע של הלחץ. האם התנגשויות בין החלקיקים שומרות על התנע ועל האנרגיה?`,
+   valid:`כשהרדיוס שואף לאפס היחס בין הלחץ הנמדד לניבוי צריך להיות קרוב ל-1. כשהרדיוס גדל היחס גדל מעל 1, ובמספר חלקיקים קטן התנודות גדולות יותר. האנרגיה הקינטית הכוללת נשמרת.`},
+ val:{before:`התלמידים משננים את משוואת המצב ואת הנחות המודל, בלי לראות איך לחץ "נוצר" ממכות של חלקיקים.`,
+   after:`התלמידים רואים את הקשר בין התיאור המיקרוסקופי (חלקיקים) לגדלים המקרוסקופיים (לחץ וטמפרטורה), ומבינים את תפקיד הנחות המודל ואת גבולותיו.`,
+   m:[`הסבירו את טעות המקדם 2 בעזרת שינוי התנע של חלקיק שפוגע בדופן.`,`נתחו איך יחס הלחצים משתנה עם רדיוס החלקיקים, והסבירו למה.`,`קבעו מתי גז ממשי מתנהג בקירוב כגז אידאלי (צפיפות, גודל החלקיקים).`]},
+ sim:'gas', tasks:[`קבעו רדיוס 0 ובדקו שהיחס קרוב ל-1.`,`הגדילו את הרדיוס ועקבו אחרי היחס.`,`הקטינו את מספר החלקיקים ל-10: מה קורה לתנודות בלחץ?`]},
+
+{id:'m6', s:'mech', n:6, ch:'תנועה הרמונית פשוטה', title:'מטוטלת בזווית גדולה', en:'Simple pendulum beyond small angles',
+ ref:'סעיפים 6.2–6.3: משוואת התנועה, פתרון נומרי בגיליון אלקטרוני, מטוטלת פשוטה',
+ short:'הדוגמה מהתבנית: מה קורה לזמן המחזור כשהזווית גדולה, ואיך החיכוך משנה את התנועה?',
+ concepts:`תנועה מחזורית, זמן מחזור, תדירות, משוואת תנועה הרמונית, ${F('T = 2π√(L/g)')}, ${F('ΣF = −cx')}.`,
+ trad:`מניחים זווית קטנה (${F('θ ≪ 15°')}) ולכן ${F('sinθ ≈ θ')}, מזניחים את התנגדות האוויר, ומתייחסים למסה כאל נקודה. הפתרון האנליטי סגור, וזמן המחזור אינו תלוי במשרעת.`,
+ ext:{complex:`תנודות בזווית התחלתית גדולה (${F('θ₀ > 30°')}): המשוואה ${F("θ'' = −(g/L)·sinθ")} אינה ליניארית ודרוש פתרון נומרי.`,
+      laws:`הוספת ריסון (התנגדות אוויר) ${F("−b·θ'")} לתיאור תנועה מציאותית.`,
+      edge:`כשהזווית שואפת ל-180° זמן המחזור שואף לאינסוף. כש-${F('t → ∞')} התנודה דועכת. כש-${F('θ₀ → 0')} חוזרים לנוסחה הקלאסית.`},
+ ai:{main:`התלמידים משתמשים ב-AI לכתיבת קוד נומרי שמדמה את תנועת המטוטלת מעבר להנחות הפשוטות: זווית התחלתית גדולה והשפעת החיכוך.`,
+     err:`קוד "של AI" שמחשב ${F('sin(theta)')} כש-theta במעלות, או ששוכח את ${F('g')}. התוצאה נראית מחזורית ולכן "סבירה", אבל זמן המחזור שגוי לגמרי. התלמידים מוצאים את הטעות בעזרת בדיקת יחידות ומקרה קצה של זווית קטנה.`,
+     spar:`"למה זמן המחזור אינו תלוי במשרעת בקירוב זוויות קטנות, ומאיזו זווית זה מפסיק להיות נכון?"`},
+ steps:{self:`ציירו את הכוחות על המטוטלת, כתבו את משוואת התאוצה המשיקית וחשבו את זמן המחזור בקירוב זווית קטנה למטוטלת באורך 1 מ' (${F('≈ 2.01 s')}).`,
+   pe:`Simulate the motion of a simple pendulum with length L = 1 m and initial angle θ0 = 60°, including air friction (a damping term −b·dθ/dt with b = 0.1 1/s). Plot angle vs time and compare it with the small-angle solution. Provide Python code and analysis of the results, including the period for small and large initial angles.`,
+   ph:`הדמה בעזרת Python מטוטלת באורך 1 מ', בזווית התחלתית של 60° ועם התנגדות אוויר (איבר ריסון −b·dθ/dt עם b = 0.1 1/ש'). הצג גרף זווית-זמן, השווה לפתרון בקירוב זוויות קטנות, וכתוב פרשנות לפתרון, כולל זמן המחזור בזוויות קטנות וגדולות.`,
+   crit:`בחנו את הקוד ואת התוצאות ואתרו נקודות שבהן הן מתנגשות עם הפיזיקה: האם היחידות נכונות (רדיאנים)? האם החיכוך מיושם כהלכה (נגד כיוון המהירות)? האם יש הנחות נסתרות?`,
+   valid:`ודאו שכל הפרמטרים מופיעים במשוואה, שהגרף מראה דעיכה הגיונית של המשרעת ושעם הזמן המטוטלת נבלמת. ב-60° זמן המחזור צריך להיות ארוך בכ-7% מהנוסחה הקלאסית.`},
+ val:{before:`התלמידים מחשבים תנועה במחזורים קטנים עם משוואות פשוטות, אבל לא יכולים להסביר התנהגות במצבים מציאותיים (כמו השפעת הדעיכה), ולא תמיד מזהים את תחום התקפות של הנוסחה.`,
+   after:`התלמידים ניגשים למודלים מורכבים (כולל חיכוך ודעיכה), מבינים דינמיקה רבת משתנים ומתנסים בסימולציות מותאמות אישית, מעבר ל"פתרון הסגור".`,
+   m:[`הסבירו בפירוט שגיאה של ה-AI שגיליתם (למשל מעלות במקום רדיאנים) והציגו תיקון מבוסס פיזיקה.`,`נתחו את הגרף הנומרי והסבירו את תכונותיו, כמו דעיכת התנודות והתארכות זמן המחזור.`,`הגדירו במפורש באיזה טווח זוויות הנוסחה הקלאסית נכונה בקירוב (למשל שגיאה קטנה מ-1%).`]},
+ sim:'pendulum', tasks:[`מצאו את הזווית שבה זמן המחזור ארוך ב-1% מהנוסחה הקלאסית.`,`קבעו זווית של 170°: מה קורה לזמן המחזור?`,`אפסו את הריסון והשוו את שני הגרפים לאורך זמן.`]},
+
+{id:'m7', s:'mech', n:7, ch:'כבידה', title:'מסלולי לוויין ושגיאה נומרית', en:'Gravitation: orbits and numerical error',
+ ref:'סעיפים 7.2–7.3: חוק הכבידה, מסלולים, אנרגיה בשדה הכבידה, מהירות מילוט, הדמיה בגיליון אלקטרוני',
+ short:'מסלולים אליפטיים, מהירות מילוט, ומה קורה אם כוח הכבידה לא היה בדיוק 1/r².',
+ concepts:`${F('F = GMm/r²')}, חוקי קפלר, ${F('T² ∝ r³')}, אנרגיה ${F('E = −GMm/2r')}, מהירות מילוט, אנרגיית קשר.`,
+ trad:`מטפלים רק במסלולים מעגליים: ${F('v = √(GM/r)')}, וחוק קפלר השלישי מאומת על מעגלים.`,
+ ext:{complex:`כשמהירות השיגור שונה ממהירות המעגל המסלול אליפטי, כפי שהתכנית מציינת (סעיף 7.2.ד). את המסלול מחשבים נומרית.`,
+      laws:`משנים את מעריך המרחק בחוק הכבידה (${F('F ∝ 1/rⁿ')} עם n ≠ 2): המסלולים כבר לא נסגרים ונוצרת "פרסציה" (רוזטה). זו דרך לראות כמה מיוחד החוק ${F('1/r²')}.`,
+      edge:`במהירות ${F('√2')} כפול מהירות המעגל הלוויין בורח. במהירות קטנה מאוד הוא צולל לעבר הכוכב. שיטת אוילר "יוצרת" אנרגיה והמסלול מתרחב.`},
+ ai:{main:`מבקשים מה-AI סימולציה של מסלולים במהירויות שיגור שונות, ובדיקה של שימור האנרגיה בשתי שיטות נומריות.`,
+     err:`ה-AI משתמש בשיטת אוילר הפשוטה ומציג מסלול שמתרחב לאט כ"השפעה של הכבידה". בדיקה של האנרגיה הכוללת מראה שהיא עולה כל הזמן, כלומר זו שגיאה נומרית ולא פיזיקה.`,
+     spar:`"אם לוויין במסלול מעגלי מואט פתאום ב-10%, האם הוא עובר למסלול מעגלי קטן יותר?" (תלמידים רבים חושבים שכן, אבל המסלול הופך לאליפסה.)`},
+ steps:{self:`חשבו את מהירות המעגל ואת מהירות המילוט של לוויין בגובה 400 ק"מ מעל כדור הארץ, ואת האנרגיה הכוללת שלו במסלול מעגלי.`,
+   pe:`Write a Python simulation of a satellite orbiting a planet, in units where G·M = 1 and the initial distance is r0 = 1. Launch it perpendicular to the radius with a speed equal to f times the circular speed, for f = 0.7, 1.0, 1.2 and 1.45. Plot the orbits, check the conservation of total energy, and compare Euler's method with the leapfrog (velocity Verlet) method. Explain which method is more reliable and why.`,
+   ph:`כתוב סימולציית Python של לוויין המקיף כוכב, ביחידות שבהן G·M = 1 והמרחק ההתחלתי הוא 1. שגר אותו בניצב לרדיוס במהירות השווה ל-f כפול מהירות המעגל, עבור f = 0.7, 1.0, 1.2 ו-1.45. שרטט את המסלולים, בדוק את שימור האנרגיה הכוללת, והשווה בין שיטת אוילר לשיטת leapfrog (velocity Verlet). הסבר איזו שיטה אמינה יותר ולמה.`,
+   crit:`בדקו את האנרגיה הכוללת לאורך זמן בכל שיטה, ואת השפעת צעד הזמן. האם מסלול שנפתח הוא תוצאה פיזיקלית או שגיאה של השיטה?`,
+   valid:`ב-f = 1 המסלול מעגלי. בין 1 ל-${F('√2')} הוא אליפטי וסגור, וזמן המחזור מקיים את חוק קפלר השלישי עם חצי הציר הגדול. מעל ${F('√2')} הלוויין בורח. האנרגיה הכוללת קבועה (בשיטה הטובה).`},
+ val:{before:`התלמידים פותרים מסלולים מעגליים בלבד ומאמינים שכל שינוי מהירות מוביל למעגל חדש.`,
+   after:`התלמידים חוקרים מסלולים אליפטיים ומסלולי בריחה, מבינים את משמעות האנרגיה הכוללת, ולומדים לבדוק את אמינות הסימולציה בעזרת חוקי שימור.`,
+   m:[`הסבירו איך בדיקת האנרגיה חושפת שהמסלול המתרחב של ה-AI הוא שגיאה נומרית.`,`נתחו את המסלול עבור f = 1.2: היכן המהירות גדולה ביותר, ולמה (חוק קפלר השני)?`,`קבעו את תחום מהירויות השיגור שבו המסלול סגור, ונמקו בעזרת האנרגיה הכוללת.`]},
+ sim:'orbit', tasks:[`עברו לשיטת אוילר ועקבו אחרי השינוי באנרגיה.`,`מצאו את מהירות השיגור המינימלית לבריחה.`,`שנו את המעריך ל-2.1 וצפו בפרסציה של המסלול.`]},
+
+/* ---------------- ELECTROMAGNETISM ---------------- */
+{id:'e1', s:'em', n:1, ch:'חוק קולון והשדה האלקטרוסטטי', title:'מפת השדה של שני מטענים', en:'Coulomb\'s law: the field of two charges',
+ ref:'סעיפים 1.2–1.3: חוק קולון, עקרון הסופרפוזיציה, קווי שדה',
+ short:'מחשבים את השדה בכל נקודה במרחב ומציירים קווי שדה. איפה השדה מתאפס?',
+ concepts:`חוק קולון ${F('F = kq₁q₂/r²')}, שדה ${F('E = kq/r²')}, עקרון הסופרפוזיציה, קווי שדה.`,
+ trad:`מחשבים שדה של מטען נקודתי בודד, או סופרפוזיציה בכמה נקודות בודדות. קווי שדה מצוירים ביד ובאופן איכותי.`,
+ ext:{complex:`מפת שדה מלאה של שני מטענים כלשהם: חישוב וקטורי בכל נקודה ברשת, וציור קווי שדה בעזרת התקדמות בצעדים קטנים לאורך כיוון השדה.`,
+      laws:`מטענים שונים בגודלם ובסימנם. שדה של דיפול ("זוג" מטענים מנוגדים) דועך במרחק רב כמו ${F('1/r³')} ולא כמו ${F('1/r²')}.`,
+      edge:`במטענים שווים השדה מתאפס באמצע. במטענים מנוגדים (דיפול) אין נקודת אפס בין המטענים. ממרחק רב מאוד המערכת נראית כמו מטען אחד ${F('q₁ + q₂')}.`},
+ ai:{main:`מבקשים מה-AI תוכנית שמציירת קווי שדה ווקטורי שדה של שני מטענים, ומוצאת נקודות שבהן השדה מתאפס.`,
+     err:`ה-AI מחבר את גודלי השדות (${F('E = E₁ + E₂')}) במקום לחבר וקטורים. כך אין נקודת אפס בין שני מטענים שווים, בניגוד לסימטריה הברורה של הבעיה.`,
+     spar:`"האם קווי שדה יכולים להיחתך? מה היה קורה לכוח על מטען בוחן בנקודת החיתוך?"`},
+ steps:{self:`חשבו בעצמכם את השדה (גודל וכיוון) בנקודה שבאמצע בין שני מטענים של 1 מיקרוקולון במרחק 4 ס"מ, פעם כשהם שווים ופעם כשהם מנוגדים.`,
+   pe:`Write a Python program that plots the electric field lines and field vectors of two point charges q1 and q2 placed 4 cm apart, using vector superposition of Coulomb fields on a grid. Show the cases q1 = q2, q1 = −q2 and q1 = 3·q2, find any points where the field is zero, and explain the code.`,
+   ph:`כתוב תוכנית Python שמציירת את קווי השדה ואת וקטורי השדה של שני מטענים נקודתיים q1 ו-q2 במרחק 4 ס"מ זה מזה, בעזרת חיבור וקטורי של שדות קולון על רשת נקודות. הצג את המקרים q1 = q2, q1 = −q2 ו-q1 = 3·q2, מצא נקודות שבהן השדה מתאפס, והסבר את הקוד.`,
+   crit:`בדקו שהשדות מחוברים כווקטורים, שהכיוון נכון (יוצא ממטען חיובי ונכנס לשלילי) ושהגודל דועך כמו ${F('1/r²')} ליד כל מטען.`,
+   valid:`במטענים שווים יש נקודת אפס באמצע. ב-${F('q₁ = 3q₂')} (אותו סימן) נקודת האפס קרובה יותר למטען הקטן, במרחק של כ-0.63 מהמרחק בין המטענים מהמטען הגדול. מספר קווי השדה היוצאים מכל מטען יחסי לגודלו.`},
+ val:{before:`התלמידים מחשבים שדה בנקודות בודדות ומציירים קווי שדה "לפי העין", ולעיתים מבלבלים בין חיבור גדלים לחיבור וקטורים.`,
+   after:`התלמידים רואים את השדה כולו, מבינים את הסופרפוזיציה הווקטורית ואת משמעות צפיפות קווי השדה, ומזהים מבנה של דיפול.`,
+   m:[`הסבירו למה חיבור גדלים במקום וקטורים הוא טעות, ואיזו עובדה פיזיקלית חושפת אותה.`,`נתחו את מפת השדה: היכן השדה חזק ביותר, והיכן הוא מתאפס?`,`קבעו מאיזה מרחק אפשר להתייחס לשני המטענים כאל מטען נקודתי אחד.`]},
+ sim:'dipole', tasks:[`קבעו מטענים שווים ומצאו את נקודת האפס.`,`קבעו מטענים מנוגדים: האם יש נקודת אפס על הציר?`,`קבעו q1 = 3 ו-q2 = 1 והשוו את מיקום נקודת האפס לחישוב.`]},
+
+{id:'e2', s:'em', n:2, ch:'פוטנציאל חשמלי, קיבול וקבלים', title:'הטיית אלקטרון בין לוחות קבל', en:'Electric potential: electron deflection (oscilloscope)',
+ ref:'סעיף 2.1: האצה של מטענים בשדה חשמלי, הטיה של אלומת אלקטרונים, תותח אלקטרונים, אוסצילוסקופ',
+ short:'מסלול מלא של אלקטרון באוסצילוסקופ: האצה, הטיה בין הלוחות ותנועה חופשית עד המסך.',
+ concepts:`הפרש פוטנציאלים, ${F('E = V/d')} בשדה אחיד, האצה במתח ${F('½mv² = eV')}, אלקטרון-וולט, תותח אלקטרונים.`,
+ trad:`מטפלים בשדה האחיד שבין הלוחות בלבד, מחשבים מסלול פרבולי ומניחים שהאלקטרון יוצא מבין הלוחות.`,
+ ext:{complex:`המסלול המלא: האצה במתח ${F('Vₐ')}, הטיה בין לוחות באורך ${F('L')} ותנועה בקו ישר עד מסך במרחק 20 ס"מ.`,
+      laws:`בודקים מתי האלקטרון פוגע בלוח. מגלים שההטיה על המסך יחסית ל-${F('V/Vₐ')} ואינה תלויה במסה או במטען של החלקיק.`,
+      edge:`מתח הטיה גדול מדי: האלקטרון פוגע בלוח. מתח האצה קטן: האלקטרון איטי ומוטה הרבה. לוחות ארוכים במיוחד.`},
+ ai:{main:`מבקשים מה-AI תוכנית שמחשבת את מסלול האלקטרון כולו, מזהה פגיעה בלוח ומחשבת את ההטיה על המסך.`,
+     err:`ה-AI מחשב את התאוצה בין הלוחות כ-${F('a = eV/m')} (בלי החלוקה במרחק בין הלוחות, כלומר משתמש במתח במקום בשדה). היחידות לא מתאימות, וההטיה יוצאת גדולה פי עשרות. במקרה אחר הוא מוסיף את ${F('g')}, שזניח לגמרי כאן.`,
+     spar:`"למה ההטיה על המסך אינה תלויה במסת החלקיק? האם יון ואלקטרון שהואצו באותו מתח יפגעו באותה נקודה?"`},
+ steps:{self:`חשבו את מהירות האלקטרון אחרי האצה במתח 1000 וולט (${F('≈ 1.9·10⁷ m/s')}) ואת זמן המעבר בין לוחות באורך 5 ס"מ.`,
+   pe:`An electron is accelerated from rest through Va = 1000 V. It then enters the gap between two parallel plates (length 5 cm, separation 2 cm) with a deflecting voltage V = 50 V, and finally travels 20 cm to a screen. Write a Python program that computes and plots the full trajectory, detects whether the electron hits a plate, and prints the deflection on the screen. Explain the physics and check the units.`,
+   ph:`אלקטרון מואץ ממנוחה במתח של 1000 וולט, נכנס לרווח שבין שני לוחות מקבילים (אורך 5 ס"מ, מרחק 2 ס"מ) עם מתח הטיה של 50 וולט, וממשיך 20 ס"מ עד למסך. כתוב תוכנית Python שמחשבת ומשרטטת את המסלול המלא, מזהה אם האלקטרון פוגע בלוח, ומדפיסה את ההטיה על המסך. הסבר את הפיזיקה ובדוק את היחידות.`,
+   crit:`בדקו את היחידות של התאוצה, את ההנחה שהשדה אחיד ואפס מחוץ ללוחות, ואם הכבידה זניחה (השוו ${F('eE')} ל-${F('mg')}).`,
+   valid:`בין הלוחות ${F('y = V·x²/(4·d·Vₐ)')}, ובנתונים האלה ההטיה על המסך כ-1.4 ס"מ. כשמכפילים גם את ${F('V')} וגם את ${F('Vₐ')} ההטיה לא משתנה.`},
+ val:{before:`התלמידים מחשבים תנועה פרבולית בין לוחות כתרגיל בודד, בלי לחבר אותו למכשיר אמיתי ובלי לבדוק פגיעה בלוחות.`,
+   after:`התלמידים מבינים את פעולת האוסצילוסקופ כמד מתח, משלבים מכניקה וחשמל ומגלים תלויות לא צפויות (אי-תלות במסה).`,
+   m:[`הסבירו את טעות היחידות בחישוב התאוצה של ה-AI, והציגו תיקון.`,`נתחו את המסלול: איפה הוא פרבולי ואיפה ישר, ולמה?`,`קבעו את מתח ההטיה המרבי שבו האלקטרון עדיין לא פוגע בלוח, וחשבו אותו גם אנליטית.`]},
+ sim:'deflect', tasks:[`הגדילו את מתח ההטיה עד שהאלקטרון פוגע בלוח.`,`הכפילו גם את מתח ההאצה וגם את מתח ההטיה: מה קורה להטיה?`,`מצאו את רגישות ההטיה (ס"מ לוולט) במתח האצה של 1000 וולט.`]},
+
+{id:'e3', s:'em', n:3, ch:'מעגלי זרם ישר', title:'טעינת קבל: מקור לא אידאלי ושיטת אוילר', en:'DC circuits: charging a capacitor numerically',
+ ref:'סעיפים 3.4–3.5: כא"מ ומתח הדקים, טיפול כמותי בטעינה ופריקה של קבל',
+ short:'מה עושה ההתנגדות הפנימית לטעינה, ולמה פתרון נומרי עם צעד גדול "מטעין" את הקבל מעבר לכא"מ?',
+ concepts:`קבוע זמן ${F('τ = RC')}, ${F('I = I₀·e^(−t/RC)')}, כא"מ, התנגדות פנימית, מתח הדקים ${F('V = ε − Ir')}.`,
+ trad:`המקור אידאלי, הנוסחה המעריכית נתונה, ואין פתרון נומרי או בדיקה של השפעת צעד הזמן.`,
+ ext:{complex:`טעינה דרך מקור עם התנגדות פנימית ${F('r')}: קבוע הזמן ${F('τ = (R + r)·C')}, ומתח ההדקים משתנה בזמן הטעינה.`,
+      laws:`פותרים את המעגל נומרית בצעדי זמן, כמו בגיליון אלקטרוני, ומשווים לפתרון המדויק.`,
+      edge:`כשצעד הזמן גדול מ-${F('τ')}, שיטת אוילר "מטעינה" את הקבל מעבר לכא"מ, ומעל ${F('2τ')} הפתרון מתבדר. ברגע הראשון הקבל מתנהג כמו תיל, ואחרי זמן רב כמו נתק.`},
+ ai:{main:`מבקשים מה-AI פתרון נומרי של טעינת הקבל, עם השוואה לפתרון המדויק בצעדי זמן שונים.`,
+     err:`ה-AI משתמש ב-${F('τ = RC')} ומתעלם מההתנגדות הפנימית. במקרה אחר הוא מציג בלי הערה תוצאה שבה המתח על הקבל עולה מעל 12 וולט, דבר בלתי אפשרי פיזיקלית.`,
+     spar:`"למה ברגע הראשון הקבל מתנהג כמו תיל, ואחרי זמן רב כמו נתק?"`},
+ steps:{self:`חשבו את הזרם ההתחלתי, את קבוע הזמן ואת מתח ההדקים ברגע הראשון, עבור ${F('ε = 12 V')}, ${F('R = 5 kΩ')}, ${F('r = 1 kΩ')} ו-${F('C = 1000 µF')}.`,
+   pe:`A capacitor C = 1000 µF is charged through a resistor R = 5 kΩ by a battery with EMF 12 V and internal resistance r = 1 kΩ. Write a Python program that solves the charging numerically with Euler's method for time steps Δt = 0.1τ, 0.5τ and 1.5τ, compares each with the exact solution, and plots the capacitor voltage, the terminal voltage and the current. Explain what happens when the time step is large.`,
+   ph:`קבל של 1000 מיקרופרד נטען דרך נגד של 5 קילואוהם בעזרת סוללה עם כא"מ של 12 וולט והתנגדות פנימית של 1 קילואוהם. כתוב תוכנית Python שפותרת את הטעינה נומרית בשיטת אוילר בצעדי זמן של 0.1τ, 0.5τ ו-1.5τ, משווה כל אחד לפתרון המדויק, ומשרטטת את המתח על הקבל, את מתח ההדקים ואת הזרם. הסבר מה קורה כשצעד הזמן גדול.`,
+   crit:`בדקו איזו התנגדות נכנסת לקבוע הזמן, האם המתח על הקבל חוצה את הכא"מ, ואיך השגיאה תלויה בצעד הזמן.`,
+   valid:`${F('τ = 6 s')}, הזרם ההתחלתי 2 מיליאמפר, ומתח ההדקים מתחיל ב-10 וולט ועולה ל-12. המתח על הקבל אף פעם לא עולה מעל הכא"מ, ובצעד קטן הפתרון הנומרי מתלכד עם המדויק.`},
+ val:{before:`התלמידים מציבים בנוסחה המעריכית בלי להבין מאיפה היא באה, ולא מבחינים בין כא"מ למתח הדקים בזמן טעינה.`,
+   after:`התלמידים מבינים את הטעינה כתהליך צעד-אחר-צעד, יודעים לבדוק פתרון נומרי מול חוקי הפיזיקה ומבינים את תפקיד ההתנגדות הפנימית.`,
+   m:[`הסבירו למה תוצאה של מתח מעל הכא"מ מעידה על בעיה בשיטה ולא על פיזיקה.`,`נתחו את גרף מתח ההדקים: למה הוא עולה בזמן הטעינה?`,`קבעו את צעד הזמן המרבי שבו השגיאה המרבית קטנה מ-5%.`]},
+ sim:'rc', tasks:[`הגדילו את צעד הזמן ל-1.5τ ומעל 2τ: מה קורה לפתרון הנומרי?`,`שנו את ההתנגדות הפנימית ועקבו אחרי מתח ההדקים ההתחלתי.`,`עברו למצב פריקה והשוו את קבוע הזמן.`]},
+
+{id:'e4', s:'em', n:4, ch:'השדה המגנטי', title:'שדות מוצלבים ובורר מהירויות', en:'Magnetic field: motion in crossed E and B fields',
+ ref:'סעיפים 4.5–4.6: כוח לורנץ, תנועת מטען בשדה מגנטי, בורר מהירויות',
+ short:'מה עושה חלקיק שאינו מקיים v = E/B? מסלולים ציקלואידיים וסחיפה שאינה תלויה במטען.',
+ concepts:`כוח לורנץ ${F('F = qvB·sinα')}, תנועה מעגלית ${F('r = mv/(qB)')}, בורר מהירויות ${F('v = E/B')}, הכוח המגנטי אינו עושה עבודה.`,
+ trad:`מטען בשדה מגנטי אחיד בלבד נע במעגל. בורר המהירויות נלמד רק במצב האיזון, כשהחלקיק נע בקו ישר.`,
+ ext:{complex:`חלקיק בשדות מוצלבים שמהירותו שונה מ-${F('E/B')}: המסלול הוא ציקלואידה, שילוב של סיבוב וסחיפה. התנועה מחושבת נומרית.`,
+      laws:`עם ${F('E')} ו-${F('B')} יחד מופיעה מהירות סחיפה ${F('E/B')} בכיוון ${F('E×B')}, שאינה תלויה במטען או במסה.`,
+      edge:`כש-${F('v₀ = E/B')} התנועה בקו ישר. כש-${F('v₀ = 0')} מתקבלת ציקלואידה עם נקודות עצירה. כש-${F('E = 0')} חוזרים למעגל.`},
+ ai:{main:`מבקשים מה-AI סימולציה של חלקיק טעון בשדות מוצלבים, עם מסלולים במהירויות התחלה שונות.`,
+     err:`ה-AI מחליף את סדר המכפלה הווקטורית (${F('B×v')} במקום ${F('v×B')}), והחלקיק מסתובב לכיוון ההפוך. במקרה אחר, בשיטה נומרית גסה, גודל המהירות עולה גם כש-${F('E = 0')}, כאילו הכוח המגנטי עושה עבודה.`,
+     spar:`"למה יון חיובי ואלקטרון בשדות מוצלבים סוחפים באותו כיוון, למרות שהם מסתובבים בכיוונים הפוכים?"`},
+ steps:{self:`חשבו את רדיוס המסלול של פרוטון במהירות ${F('10⁶ m/s')} בשדה של 0.1 טסלה, ואת המהירות שבה הוא עובר בבורר מהירויות עם ${F('E = 10⁵ V/m')}.`,
+   pe:`Simulate a charged particle (use q = m = 1) moving in uniform perpendicular fields: B along z and E along y. Start it at the origin with velocity v0 along x. Use a fourth-order Runge–Kutta method, plot the trajectory in the x–y plane for v0 = 0, v0 = E/B and v0 = 2E/B, and verify that the speed stays constant when E = 0. Explain the motion physically.`,
+   ph:`הדמה חלקיק טעון (q = m = 1) הנע בשדות אחידים ניצבים: B בכיוון z ו-E בכיוון y. התחל בראשית עם מהירות v0 בכיוון x. השתמש בשיטת רונגה-קוטה מסדר רביעי, שרטט את המסלול במישור x–y עבור v0 = 0, v0 = E/B ו-v0 = 2E/B, ובדוק שגודל המהירות קבוע כאשר E = 0. הסבר את התנועה פיזיקלית.`,
+   crit:`בדקו את כיוון הסיבוב בעזרת כלל יד ימין, ואת שימור גודל המהירות כש-${F('E = 0')}. האם כיוון הסחיפה מתאים ל-${F('E×B')}?`,
+   valid:`כש-${F('v₀ = E/B')} המסלול קו ישר. בשאר המקרים החלקיק סוחף במהירות ממוצעת ${F('E/B')} בכיוון x החיובי, ורדיוס הסיבוב סביב מרכז הסחיפה הוא ${F('|v₀ − E/B|·m/(qB)')}.`},
+ val:{before:`התלמידים מכירים מעגל בשדה מגנטי וקו ישר בבורר מהירויות, אבל לא מבינים מה קורה בין שני המצבים.`,
+   after:`התלמידים מבינים את הבורר כמערכת דינמית, משתמשים בכלל יד ימין לבקרת קוד, ומבינים למה הכוח המגנטי אינו משנה את האנרגיה הקינטית.`,
+   m:[`הסבירו איך שימור גודל המהירות ב-${F('E = 0')} חושף שגיאה בקוד.`,`נתחו את מסלול הציקלואידה: היכן מהירות החלקיק גדולה ביותר?`,`קבעו באיזה טווח מהירויות חלקיקים "עוברים" בבורר שבו יש חריץ ברוחב נתון.`]},
+ sim:'crossed', tasks:[`קבעו v₀ = E/B וודאו שהמסלול ישר.`,`קבעו v₀ = 0 וצפו בציקלואידה.`,`אפסו את E וודאו שהמסלול הוא מעגל.`]},
+
+{id:'e5', s:'em', n:5, ch:'השראה אלקטרומגנטית', title:'מוט על מסילות ובלימה מגנטית', en:'Electromagnetic induction: a rod on rails',
+ ref:'סעיף 5.1: כא"מ מושרה, חוק פאראדיי, חוק לנץ כנובע משימור אנרגיה',
+ short:'מוט שנמשך בכוח קבוע מגיע למהירות גבולית. חוק לנץ ושימור האנרגיה בתוך סימולציה אחת.',
+ concepts:`כא"מ מושרה ${F('ε = BLv')}, חוק פאראדיי, חוק לנץ, ${F('I = ε/R')}, הספק ${F('P = I²R')}.`,
+ trad:`המוט נע במהירות קבועה (מישהו "דואג" לזה), ומחשבים רק את הכא"מ, את הזרם ואת הכוח החיצוני הדרוש.`,
+ ext:{complex:`המוט נמשך בכוח קבוע ${F('F')} ומתחיל ממנוחה: המהירות משתנה, והכוח המגנטי הבולם גדל עם המהירות.`,
+      laws:`משוואת התנועה ${F('m·dv/dt = F − B²L²v/R')} נותנת מהירות גבולית ${F('vₜ = FR/(B²L²)')}.`,
+      edge:`כש-${F('R → ∞')} (מעגל פתוח) אין זרם ואין בלימה. כש-${F('R')} קטן הבלימה חזקה. כש-${F('B = 0')} המוט מואץ בלי הגבלה.`},
+ ai:{main:`מבקשים מה-AI פתרון נומרי של תנועת המוט, עם גרפים של המהירות, הזרם, ההספק המכני וההספק החשמלי.`,
+     err:`ה-AI כותב את הכוח המגנטי עם סימן חיובי, כלומר בכיוון התנועה. המהירות עולה מעריכית בלי סוף, "מכונת תנועה נצחית". התלמידים מזהים שזו הפרה של שימור האנרגיה ושל חוק לנץ.`,
+     spar:`"מה היה קורה אילו הזרם המושרה היה זורם בכיוון ההפוך? למה זה היה מפר את שימור האנרגיה?"`},
+ steps:{self:`חשבו את הכא"מ, הזרם והכוח המגנטי על מוט באורך 0.5 מ' הנע במהירות קבועה של 4 מ'/ש' בשדה של 1 טסלה, כשההתנגדות 2 אוהם.`,
+   pe:`A conducting rod of mass m = 0.5 kg and length L = 0.5 m slides without friction on horizontal rails connected by a resistor R = 2 Ω, in a uniform vertical magnetic field B = 1 T. A constant force F = 2 N pulls the rod, starting from rest. Write a Python program that solves the motion numerically, plots v(t), the induced current I(t), the mechanical power F·v and the electrical power I²R, and finds the terminal velocity. Explain how Lenz's law appears in the code.`,
+   ph:`מוט מוליך במסה 0.5 ק"ג ובאורך 0.5 מ' מחליק בלי חיכוך על מסילות אופקיות המחוברות בנגד של 2 אוהם, בשדה מגנטי אנכי אחיד של 1 טסלה. כוח קבוע של 2 ניוטון מושך את המוט ממנוחה. כתוב תוכנית Python שפותרת את התנועה נומרית, משרטטת את v(t), את הזרם המושרה, את ההספק המכני F·v ואת ההספק החשמלי I²R, ומוצאת את המהירות הגבולית. הסבר איך חוק לנץ בא לידי ביטוי בקוד.`,
+   crit:`בדקו את סימן הכוח המגנטי (נגד התנועה), את מאזן ההספקים, ואם המהירות הגבולית יוצאת כמו הנוסחה.`,
+   valid:`${F('vₜ = 16 m/s')}, קבוע הזמן ${F('mR/(B²L²) = 4 s')}, ובמהירות הגבולית ${F('F·v = I²R = 32 W')}: כל העבודה של הכוח החיצוני הופכת לחום בנגד.`},
+ val:{before:`התלמידים מציבים ב-${F('ε = BLv')} כשהמהירות נתונה, ולא מבינים את חוק לנץ ככלל שנובע משימור אנרגיה.`,
+   after:`התלמידים רואים את חוק לנץ "בפעולה", מנהלים מאזן הספקים מלא ומבינים בלימה מגנטית (כמו מגנט שנופל בצינור אלומיניום).`,
+   m:[`הסבירו למה הסימן השגוי של ה-AI מפר את שימור האנרגיה.`,`נתחו את גרף ההספקים: מתי הם שווים ולמה?`,`קבעו אחרי כמה קבועי זמן אפשר להתייחס למהירות כ"קבועה" (בשגיאה של פחות מ-1%).`]},
+ sim:'rails', tasks:[`הגדילו את ההתנגדות: מה קורה למהירות הגבולית ולקבוע הזמן?`,`השוו את שני ההספקים כשהמוט מגיע למהירות הגבולית.`,`אפסו את השדה: איך נראה גרף המהירות?`]},
+
+/* ---------------- RADIATION & MATTER ---------------- */
+{id:'r1', s:'rad', n:1, ch:'תופעות יסודיות של האור', title:'שבירה, החזרה חלקית והחזרה מלאה', en:'Optics: refraction, partial and total reflection',
+ ref:'סעיף 1.3: חוקי השבירה, החזרה חלקית ומלאה, זווית גבול',
+ short:'כמה מהאור מוחזר וכמה עובר? חוק סנל יחד עם חלוקת האנרגיה בין הקרניים.',
+ concepts:`חוק סנל ${F('n₁·sinθ₁ = n₂·sinθ₂')}, מקדם שבירה, זווית גבול, החזרה מלאה, סיבים אופטיים.`,
+ trad:`מחשבים את כיוון הקרן הנשברת לפי חוק סנל. האור המוחזר בהחזרה חלקית מוזכר באופן איכותי בלבד, בלי לחשב כמה אור מוחזר.`,
+ ext:{complex:`מחשבים לכל זווית פגיעה כמה מהאנרגיה מוחזרת וכמה עוברת (משוואות פרנל, הרחבה מעבר לתכנית).`,
+      laws:`במעבר מתווך צפוף לדליל מופיעה זווית גבול, ומעליה כל האור מוחזר. בפגיעה כמעט משיקית גם במעבר מאוויר לזכוכית רוב האור מוחזר.`,
+      edge:`בפגיעה ניצבת על זכוכית מוחזרים כ-4% מהאור. בזווית שואפת ל-90° כמעט הכול מוחזר. בזווית הגבול הקרן הנשברת "נצמדת" למשטח.`},
+ ai:{main:`מבקשים מה-AI תוכנית שמחשבת את זווית השבירה, את זווית הגבול ואת אחוז האור המוחזר לכל זווית פגיעה.`,
+     err:`ה-AI מחשב זווית גבול גם במעבר מאוויר לזכוכית (${F('asin(n₂/n₁)')} עם ארגומנט גדול מ-1) ומקבל שגיאה או תוצאה חסרת משמעות. במקרה אחר הוא משתמש במעלות בתוך ${F('sin')}.`,
+     spar:`"למה בלילה רואים את ההשתקפות שלכם בחלון בבירור, ובשעות היום כמעט לא?"`},
+ steps:{self:`חשבו את זווית השבירה של קרן שעוברת מאוויר לזכוכית (${F('n = 1.5')}) בזווית 30°, ואת זווית הגבול במעבר מזכוכית לאוויר (${F('≈ 41.8°')}).`,
+   pe:`Write a Python program that, for light going from a medium with refractive index n1 to a medium with refractive index n2, computes the refraction angle (Snell's law), the critical angle when it exists, and the fraction of light reflected (use the Fresnel equations for unpolarized light), as a function of the angle of incidence from 0° to 90°. Plot the reflected and transmitted fractions for glass→air and air→glass, and explain the results.`,
+   ph:`כתוב תוכנית Python שעבור אור העובר מתווך עם מקדם שבירה n1 לתווך עם מקדם שבירה n2 מחשבת את זווית השבירה (חוק סנל), את זווית הגבול כשהיא קיימת, ואת אחוז האור המוחזר (משוואות פרנל לאור לא מקוטב), כפונקציה של זווית הפגיעה בין 0° ל-90°. שרטט את אחוז האור המוחזר והעובר במעבר מזכוכית לאוויר ומאוויר לזכוכית, והסבר את התוצאות.`,
+   crit:`בדקו מתי זווית הגבול קיימת בכלל, את היחידות של הזוויות ואת סכום האחוזים (מוחזר ועובר).`,
+   valid:`סכום האור המוחזר והעובר הוא תמיד 100%. בפגיעה ניצבת מוחזרים ${F('((n₁ − n₂)/(n₁ + n₂))²')}, כ-4% בזכוכית. מזכוכית לאוויר מעל 41.8° הכול מוחזר.`},
+ val:{before:`התלמידים יודעים לחשב כיוון של קרן נשברת, אבל לא יודעים להסביר למה רואים השתקפות חלשה בחלון או איך עובד סיב אופטי.`,
+   after:`התלמידים מבינים את חלוקת האנרגיה בין הקרניים, את המעבר הרציף להחזרה מלאה ואת היישומים הטכנולוגיים שלה.`,
+   m:[`הסבירו למה זווית גבול לא קיימת במעבר מאוויר לזכוכית, ואיך זה חושף את טעות ה-AI.`,`נתחו את גרף אחוז ההחזרה: איך הוא משתנה ליד זווית הגבול?`,`קבעו באיזה טווח זוויות מותר להזניח את האור המוחזר (פחות מ-5%).`]},
+ sim:'refract', tasks:[`קבעו מעבר מזכוכית (1.5) לאוויר (1) ומצאו את זווית הגבול.`,`קבעו פגיעה ניצבת ובדקו את אחוז ההחזרה.`,`החליפו את סדר התווכים: האם עדיין יש החזרה מלאה?`]},
+
+{id:'r2', s:'rad', n:2, ch:'המושג "מודל" והמודל החלקיקי', title:'שני מודלים, ניבוי אחד מכריע', en:'Models of light: particles vs waves (least time)',
+ ref:'סעיפים 2.1–2.3: תפקידי המודל, המודל החלקיקי, ניבויי המודל ומהירות האור בזכוכית',
+ short:'שני המודלים מסבירים את השבירה, אבל מנבאים מהירויות הפוכות. עקרון הזמן המזערי עוזר להכריע.',
+ concepts:`מודל מדעי, ניבוי והפרכה, המודל החלקיקי של ניוטון, מהירות האור בתווך ${F('v = c/n')}.`,
+ trad:`המודל החלקיקי מסביר את השבירה בהנחה שהחלקיקים מואצים בכניסה לזכוכית, ולכן מנבא שהאור מהיר יותר בזכוכית. הניסויים של פוקו ומייקלסון הראו את ההפך.`,
+ ext:{complex:`בוחנים את כל המסלולים האפשריים מנקודה באוויר לנקודה במים ומחשבים את זמן המעבר לפי כל מודל.`,
+      laws:`במודל הגלי המהירות במים היא ${F('c/n')}, ובמודל החלקיקי ${F('n·c')}. עקרון הזמן המזערי (פרמה) נותן את חוק סנל רק במודל הגלי.`,
+      edge:`כש-${F('n = 1')} שני המודלים זהים והמסלול ישר. ככל ש-${F('n')} גדל הפער בין הניבויים גדל.`},
+ ai:{main:`ה-AI משמש כאן בעיקר כ"שותף לאימון" לדיון במהות המודל, וגם כמחולל קוד לחישוב זמני המעבר.`,
+     err:`ה-AI טוען ש"עקרון פרמה מוכיח שהאור נע בקו ישר גם בשבירה", או משתמש במהירות ${F('n·c')} במודל הגלי. התלמידים בודקים איזו נקודת מינימום מתלכדת עם חוק סנל.`,
+     spar:`"אם שני המודלים מסבירים את חוק השבירה, איך אפשר להכריע ביניהם בניסוי? מה היה צריך למדוד?"`},
+ steps:{self:`כתבו את רשימת התופעות היסודיות של האור (פרק 1) וסמנו אילו מהן המודל החלקיקי מסביר ואילו לא (למשל החזרה חלקית בשבירה).`,
+   pe:`Light travels from point A (0, 1 m) in air to point B (2 m, −1 m) in water, crossing the surface y = 0 at a point x. Write a Python program that computes the travel time as a function of x under two models: the wave model (speed in water c/n) and Newton's particle model (speed in water n·c), with n = 1.33. Plot both curves, find the minimum of each, and check which minimum agrees with Snell's law. Explain what this means for the two models.`,
+   ph:`אור עובר מנקודה A (0, 1 מ') באוויר לנקודה B (2 מ', −1 מ') במים, וחוצה את פני המים y = 0 בנקודה x. כתוב תוכנית Python שמחשבת את זמן המעבר כפונקציה של x לפי שני מודלים: המודל הגלי (המהירות במים c/n) והמודל החלקיקי של ניוטון (המהירות במים n·c), עם n = 1.33. שרטט את שתי העקומות, מצא את המינימום של כל אחת ובדוק איזה מינימום מתאים לחוק סנל. הסבר מה המשמעות לגבי שני המודלים.`,
+   crit:`בדקו את המהירויות שהקוד מייחס לכל מודל, ואם נקודת סנל מחושבת נכון (${F('sinθ₁ = n·sinθ₂')}).`,
+   valid:`המינימום של המודל הגלי מתלכד עם נקודת סנל. המינימום של המודל החלקיקי נמצא במקום אחר, כלומר במודל החלקיקי האור אינו בוחר את המסלול המהיר ביותר.`},
+ val:{before:`התלמידים לומדים "שהמודל החלקיקי הופרך" כעובדה, בלי להבין איך ניבוי מכריע בין מודלים.`,
+   after:`התלמידים מבינים את תפקיד המודל (הסבר וניבוי), את הדרך להפריך אותו בניסוי, ואת הקשר בין עקרון פרמה לחוק סנל.`,
+   m:[`הסבירו את טענת ה-AI השגויה לגבי עקרון פרמה, ותקנו אותה.`,`נתחו את שני הגרפים: למה המינימום של כל מודל נמצא במקום אחר?`,`נסחו ניסוי שמכריע בין המודלים, ומה הוא אמור למדוד.`]},
+ sim:'fermat', tasks:[`קבעו n = 1: האם שני המינימומים מתלכדים?`,`הגדילו את n ועקבו אחרי המרחק בין המינימומים.`,`השוו את נקודת סנל למינימום של כל מודל.`]},
+
+{id:'r3', s:'rad', n:3, ch:'גלים מכניים ואלקטרומגנטיים', title:'שני סדקים ברוחב סופי', en:'Waves: double slit with finite slit width',
+ ref:'סעיף 3.4: התאבכות ועקיפה בגלי מים ובאור, סריג עקיפה',
+ short:'התאבכות כפול עקיפה: למה הפסים לא שווים בעוצמתם, ולמה חלק מהם נעלמים לגמרי?',
+ concepts:`התאבכות, עקיפה, עקרון הסופרפוזיציה, ${F('Δx ≈ λL/d')}, עקיפה בסדק יחיד ${F('sinθ = nλ/w')}.`,
+ trad:`שני סדקים נחשבים נקודתיים, והפסים שווים בעוצמתם. עקיפה בסדק יחיד נלמדת בנפרד.`,
+ ext:{complex:`שני סדקים ברוחב ${F('a')}: התבנית היא מכפלה של התאבכות משני סדקים במעטפת של עקיפה מסדק יחיד.`,
+      laws:`מופיעים "סדרים חסרים": כשהיחס ${F('d/a')} שלם, חלק מפסי ההתאבכות נופלים בדיוק על מינימום של העקיפה ונעלמים.`,
+      edge:`כש-${F('a → 0')} כל הפסים שווים. כש-${F('a')} מתקרב ל-${F('d')} נשארים פסים מעטים. ככל שאורך הגל קצר יותר הפסים צפופים יותר, והתמונה מתקרבת לאופטיקה גאומטרית.`},
+ ai:{main:`מבקשים מה-AI לשרטט את עוצמת האור על המסך, יחד עם המעטפת, ולמצוא את המרחק בין הפסים ואת הסדרים החסרים.`,
+     err:`ה-AI משתמש באמפליטודה במקום בעוצמה (שוכח את הריבוע), או מבלבל בין רוחב הסדק למרחק בין הסדקים. התלמידים בודקים את המרחק בין הפסים מול ${F('λL/d')}.`,
+     spar:`"אם מכסים את אחד הסדקים, האם נקודות שהיו חשוכות יהיו עכשיו מוארות? למה זה מפתיע?"`},
+ steps:{self:`חשבו בעצמכם את המרחק בין פסים מוארים עבור אור באורך גל 600 ננומטר, שני סדקים במרחק 0.2 מ"מ ומסך במרחק 1 מ' (${F('3 mm')}).`,
+   pe:`Write a Python program that plots the intensity on a screen 1 m away for light of wavelength 600 nm passing through two slits of width a = 0.04 mm whose centers are d = 0.2 mm apart. Use I(y) = cos²(π·d·y/(λ·L))·[sin(β)/β]² with β = π·a·y/(λ·L). Plot the single-slit envelope too, find the fringe spacing and the missing orders, and explain the result.`,
+   ph:`כתוב תוכנית Python שמשרטטת את עוצמת האור על מסך במרחק 1 מ' עבור אור באורך גל 600 ננומטר שעובר דרך שני סדקים ברוחב 0.04 מ"מ שמרכזיהם במרחק 0.2 מ"מ. השתמש ב-I(y) = cos²(π·d·y/(λ·L))·[sin(β)/β]² עם β = π·a·y/(λ·L). שרטט גם את מעטפת הסדק היחיד, מצא את המרחק בין הפסים ואת הסדרים החסרים, והסבר את התוצאה.`,
+   crit:`בדקו את הריבוע בעוצמה, את היחידות (ננומטר, מילימטר, מטר) ואת הטיפול בנקודה ${F('y = 0')} (חלוקה באפס בפונקציה ${F('sinβ/β')}).`,
+   valid:`המרחק בין הפסים 3 מ"מ, המינימום הראשון של המעטפת ב-15 מ"מ, והסדרים החסרים הם 5, 10 וכן הלאה (כי ${F('d/a = 5')}).`},
+ val:{before:`התלמידים מכירים את נוסחת שני הסדקים ואת נוסחת הסדק היחיד בנפרד, ולא מבינים למה תמונה אמיתית נראית אחרת.`,
+   after:`התלמידים מבינים את התבנית כסופרפוזיציה של רצף מקורות, מזהים סדרים חסרים ויודעים להסיק מהתבנית את ממדי הסדקים.`,
+   m:[`הסבירו את ההבדל בין אמפליטודה לעוצמה, ואיך הטעות משנה את התבנית.`,`נתחו את הגרף: למה הפסים הצדדיים חלשים יותר, ואיפה נעלמים פסים?`,`קבעו מתי מותר להתייחס לסדקים כנקודתיים (יחס ${F('a/d')} מספיק קטן).`]},
+ sim:'slits', tasks:[`קבעו d/a = 4 ומצאו את הסדרים החסרים.`,`הקטינו את רוחב הסדק ועקבו אחרי המעטפת.`,`שנו את אורך הגל מסגול לאדום ומדדו את השינוי במרחק בין הפסים.`]},
+
+{id:'r4', s:'rad', n:4, ch:'מבוא לתורת הקוונטים: המודל הדואלי של האור', title:'האפקט הפוטואלקטרי', en:'Quantum light: the photoelectric effect',
+ ref:'סעיף 4.1: האפקט הפוטואלקטרי, הסבר איינשטיין, ניסוי מיליקן, מתח עצירה',
+ short:'אופיין זרם-מתח של תא פוטואלקטרי: מה תלוי בעוצמה, מה תלוי בתדירות, ואיך מוצאים את קבוע פלאנק.',
+ concepts:`${F('E = hf')}, פונקציית עבודה (אנרגיית קשר), ${F('Eₖ,max = hf − B')}, מתח עצירה, תדירות סף.`,
+ trad:`מציבים בנוסחת איינשטיין ומשרטטים גרף של מתח עצירה כנגד תדירות.`,
+ ext:{complex:`אופיין זרם-מתח מלא של התא: זרם הרוויה יחסי לעוצמת האור, ומתח העצירה תלוי רק בתדירות.`,
+      laws:`משווים לניבוי של התורה הגלית הקלאסית, שלפיה האנרגיה של האלקטרונים אמורה לגדול עם העוצמה.`,
+      edge:`מתחת לתדירות הסף אין זרם בשום עוצמה. בעוצמה נמוכה מאוד הפליטה עדיין מידית, בלי השהיה.`},
+ ai:{main:`מבקשים מה-AI תוכנית שמחשבת את מתח העצירה ואופייני זרם-מתח, ומוצאת את קבוע פלאנק משיפוע הגרף.`,
+     err:`ה-AI מחשב מתח עצירה ${F('V = hf/e')} בלי פונקציית העבודה, או מערבב ג'אול ואלקטרון-וולט (קבוע פלאנק ביחידות ג'אול·שנייה עם אנרגיה באלקטרון-וולט) ומקבל מתח עצירה של ${F('10¹⁹')} וולט.`,
+     spar:`"למה אור אדום חזק מאוד לא עוקר אלקטרונים מאבץ, ואילו אור על-סגול חלש כן?"`},
+ steps:{self:`חשבו את תדירות הסף של נתרן (פונקציית עבודה ${F('2.28 eV')}) ואת מתח העצירה עבור אור באורך גל 400 ננומטר.`,
+   pe:`Write a Python program for a photoelectric cell with a sodium cathode (work function 2.28 eV). For light of frequency f and intensity I, compute the maximum kinetic energy of the electrons, the stopping voltage, and a simple current–voltage curve (the saturation current is proportional to the intensity). Plot the curves for two frequencies and two intensities, plot Ek,max versus f, and find Planck's constant from the slope. Be careful with units (J vs eV).`,
+   ph:`כתוב תוכנית Python לתא פוטואלקטרי עם קתודה מנתרן (פונקציית עבודה 2.28 אלקטרון-וולט). עבור אור בתדירות f ובעוצמה I, חשב את האנרגיה הקינטית המרבית של האלקטרונים, את מתח העצירה ואופיין זרם-מתח פשוט (זרם הרוויה יחסי לעוצמה). שרטט את האופיינים לשתי תדירויות ולשתי עוצמות, שרטט את Ek,max כנגד f ומצא את קבוע פלאנק מהשיפוע. הקפד על יחידות (ג'אול מול אלקטרון-וולט).`,
+   crit:`בדקו את היחידות, את מקומה של פונקציית העבודה, ואם הקוד נותן זרם גם מתחת לתדירות הסף.`,
+   valid:`תדירות הסף של נתרן כ-${F('5.5·10¹⁴ Hz')}, שיפוע הגרף ${F('h/e ≈ 4.14·10⁻¹⁵ V·s')}, ושינוי העוצמה משנה רק את זרם הרוויה ולא את מתח העצירה.`},
+ val:{before:`התלמידים מציבים בנוסחת איינשטיין, אבל מתקשים להסביר למה התוצאות סותרות את התורה הגלית.`,
+   after:`התלמידים מבחינים בין השפעת העוצמה להשפעת התדירות, קוראים אופיין ניסויי ומבינים את הניסוי של מיליקן ככלי למדידת קבוע פלאנק.`,
+   m:[`הסבירו את טעות היחידות של ה-AI ואיך זיהיתם אותה לפי סדר הגודל.`,`נתחו את אופייני זרם-מתח: מה משותף לשתי העוצמות ומה שונה?`,`קבעו את טווח אורכי הגל שבו מתכת נתונה פולטת אלקטרונים.`]},
+ sim:'photo', tasks:[`הורידו את התדירות מתחת לסף: האם עוצמה גבוהה עוזרת?`,`שנו את העוצמה ובדקו שמתח העצירה לא משתנה.`,`החליפו מתכת ובדקו את השינוי בתדירות הסף.`]},
+
+{id:'r5', s:'rad', n:5, ch:'מבנה האטום', title:'ספקטרום מימן ויונים דמויי מימן', en:'Atomic structure: hydrogen-like spectra',
+ ref:'סעיפים 5.4–5.5, 5.8: הספקטרום הניסויי של המימן, מודל בוהר, עקרון ההתאמה',
+ short:'מחשבים סדרות שלמות של קווים, ממפים אותן לתחומי הספקטרום ומרחיבים ליונים כמו He⁺.',
+ concepts:`מודל בוהר, רמות אנרגיה ${F('Eₙ = −13.6/n² eV')}, סדרות לימן, בלמר ופשן, ${F('1/λ = R(1/m² − 1/n²)')}.`,
+ trad:`מטפלים באטום המימן בלבד ובמעברים בודדים, ומחשבים אורך גל אחד בכל פעם.`,
+ ext:{complex:`מחשבים סדרות שלמות ואת גבול כל סדרה, וממפים כל קו לתחום הספקטרום (על-סגול, נראה, תת-אדום).`,
+      laws:`יון דמוי מימן (כמו ${F('He⁺')} או ${F('Li²⁺')}): ${F('Eₙ = −13.6·Z²/n² eV')}, הרחבה שמופיעה בפרקי ההעמקה.`,
+      edge:`כש-${F('n → ∞')} מגיעים לגבול הסדרה ולאנרגיית היינון. ברמות גבוהות מאוד הקווים צפופים מאוד (עקרון ההתאמה).`},
+ ai:{main:`מבקשים מה-AI לחשב את קווי הסדרות, לסווג אותם לתחומי הספקטרום ולשרטט דיאגרמת רמות.`,
+     err:`ה-AI כותב ${F('1/λ = R(1/m − 1/n)')} בלי ריבועים, או שוכח את ${F('Z²')} עבור הליום. התלמידים בודקים את הקו האדום המוכר ${F('Hα = 656 nm')}.`,
+     spar:`"למה הקווים בכל סדרה מתקרבים זה לזה ככל שאורך הגל קצר יותר, ולמה יש לסדרה גבול?"`},
+ steps:{self:`חשבו בעצמכם את אורכי הגל של שני הקווים הראשונים בסדרת בלמר ואת אנרגיית היינון של מימן מרמה n = 2.`,
+   pe:`Using the Bohr model, write a Python program that computes the wavelengths of the first 8 lines of the Lyman, Balmer and Paschen series for hydrogen (Z = 1) and for the He⁺ ion (Z = 2), including the series limit. Classify each line as ultraviolet, visible or infrared, and draw an energy-level diagram and a spectrum. Explain the formula you use.`,
+   ph:`בעזרת מודל בוהר, כתוב תוכנית Python שמחשבת את אורכי הגל של 8 הקווים הראשונים בסדרות לימן, בלמר ופשן עבור מימן (Z = 1) ועבור היון He⁺ (Z = 2), כולל גבול הסדרה. סווג כל קו לעל-סגול, נראה או תת-אדום, ושרטט דיאגרמת רמות אנרגיה וספקטרום. הסבר את הנוסחה שבה השתמשת.`,
+   crit:`בדקו את הריבועים בנוסחה, את התלות ב-${F('Z²')} ואת היחידות של קבוע רידברג.`,
+   valid:`${F('Hα = 656 nm')} ו-${F('Lyman α = 122 nm')}. אצל ${F('He⁺')} כל אורכי הגל קצרים פי 4 מהקווים המקבילים במימן.`},
+ val:{before:`התלמידים מחשבים קו בודד, ולא רואים את המבנה של הספקטרום כולו.`,
+   after:`התלמידים מבינים את הקשר בין דיאגרמת הרמות לספקטרום, מזהים סדרות ותחומים ומבינים את גבולות מודל בוהר.`,
+   m:[`הסבירו איך בדיקה של ${F('Hα')} חושפת את טעות הנוסחה.`,`נתחו את הספקטרום: למה סדרת בלמר היא היחידה בתחום הנראה?`,`קבעו לאילו אטומים ויונים מודל בוהר מתאים, ולמה הוא נכשל באטומים מרובי אלקטרונים.`]},
+ sim:'bohr', tasks:[`מצאו את הקווים הנראים בסדרת בלמר.`,`עברו ל-Z = 2: אילו קווים של He⁺ נמצאים בתחום הנראה?`,`בחרו רמת יעד 3 ובדקו את התחום של סדרת פשן.`]},
+
+{id:'r6', s:'rad', n:6, ch:'מבוא לתורת הקוונטים: דואליות החומר', title:'אלקטרון אחר אלקטרון בשני סדקים', en:'Matter waves: electrons one at a time',
+ ref:'סעיפים 6.1–6.2: גלי דה-ברויי, הפירוש ההסתברותי של בורן, ניסויים בחלקיקים בודדים',
+ short:'כל אלקטרון פוגע בנקודה אחת, ובכל זאת נבנית תבנית התאבכות. ומה קורה כשבודקים דרך איזה סדק הוא עבר?',
+ concepts:`גלי דה-ברויי ${F('λ = h/p = h/√(2meV)')}, הפירוש ההסתברותי, עקרון השלמה (קומפלמנטריות).`,
+ trad:`מחשבים אורך גל של חלקיק בודד ומתארים את תבנית ההתאבכות כתמונה מוכנה.`,
+ ext:{complex:`בונים את התבנית מפגיעות בודדות ואקראיות (סימולציית מונטה-קרלו), לפי התפלגות ההסתברות.`,
+      laws:`מוסיפים "גלאי נתיב": כשיודעים דרך איזה סדק עבר כל אלקטרון, מחברים הסתברויות ולא אמפליטודות, וההתאבכות נעלמת.`,
+      edge:`במעט אלקטרונים רואים רק פיזור אקראי. במתח האצה גבוה אורך הגל קצר והפסים צפופים.`},
+ ai:{main:`מבקשים מה-AI סימולציה שמגרילה פגיעות של אלקטרונים לפי התפלגות שני הסדקים, ומראה איך התבנית נבנית.`,
+     err:`ה-AI מחשב את ההסתברות כ-${F('|ψ₁|² + |ψ₂|²')} (סכום הסתברויות) במקום ${F('|ψ₁ + ψ₂|²')}, ולכן אין התאבכות כלל. במקרה אחר הוא מחשב את אורך הגל בלי להמיר אלקטרון-וולט לג'אול.`,
+     spar:`"אם כל אלקטרון עובר לבד, עם מה הוא מתאבך?"`},
+ steps:{self:`חשבו את אורך הגל של אלקטרון שהואץ במתח 100 וולט (${F('≈ 0.12 nm')}) והשוו אותו למרחק בין אטומים בגביש.`,
+   pe:`Write a Python program that simulates electrons accelerated through a voltage V passing one at a time through two slits separated by d. Compute the de Broglie wavelength, use the two-slit probability distribution to draw random hit positions on the screen, and show how the pattern builds up after 10, 100 and 5000 electrons. Then add a "which-slit detector" that removes the interference term. Explain the difference between adding amplitudes and adding probabilities.`,
+   ph:`כתוב תוכנית Python שמדמה אלקטרונים שהואצו במתח V ועוברים אחד-אחד דרך שני סדקים במרחק d. חשב את אורך גל דה-ברויי, השתמש בהתפלגות ההסתברות של שני סדקים כדי להגריל נקודות פגיעה על המסך, והראה איך התבנית נבנית אחרי 10, 100 ו-5000 אלקטרונים. לאחר מכן הוסף "גלאי נתיב" שמבטל את איבר ההתאבכות. הסבר את ההבדל בין חיבור אמפליטודות לחיבור הסתברויות.`,
+   crit:`בדקו את המרת היחידות, את ההבדל בין חיבור אמפליטודות לחיבור הסתברויות, ואם הקוד מגריל פגיעות לפי ההתפלגות הנכונה.`,
+   valid:`אחרי מעט אלקטרונים הפיזור נראה אקראי, ואחרי אלפים מופיעים פסים במרווח ${F('sinθ ≈ λ/d')}. עם גלאי נתיב נשארת רק המעטפת.`},
+ val:{before:`התלמידים יודעים לחשב אורך גל של חלקיק, אבל לא מבינים מה פירוש "גל" של חלקיק בודד.`,
+   after:`התלמידים מבינים את הפירוש ההסתברותי, רואים איך סדר נבנה מאקראיות ומבינים את השפעת המדידה על התוצאה.`,
+   m:[`הסבירו את ההבדל בין ${F('|ψ₁|² + |ψ₂|²')} ל-${F('|ψ₁ + ψ₂|²')}, ואיך הוא חושף את טעות ה-AI.`,`נתחו את התבנית אחרי 10, 100 ואלפי אלקטרונים: מתי אפשר לזהות פסים?`,`קבעו מתי תופעות גליות של חלקיקים ניתנות למדידה (יחס בין אורך הגל לממדי המערכת).`]},
+ sim:'electrons', tasks:[`צפו בתבנית נבנית מאלקטרון בודד ועד אלפים.`,`הפעילו את גלאי הנתיב: מה קרה לפסים?`,`הגדילו את מתח ההאצה: מה קורה למרווח בין הפסים?`]},
+
+{id:'r7', s:'rad', n:7, ch:'הגרעין ומבוא לחלקיקים יסודיים', title:'שרשרת דעיכה רדיואקטיבית', en:'Nuclear physics: a radioactive decay chain',
+ ref:'סעיף 7.3: התפרקות רדיואקטיבית, אקראיות ההתפרקות, קבוע הדעיכה, זמן מחצית החיים, סדרה רדיואקטיבית',
+ short:'גרעין-בת שנוצר ודועך באותו זמן, ואקראיות של גרעינים בודדים מול עקומה חלקה.',
+ concepts:`זמן מחצית חיים, קבוע הדעיכה ${F('λ = ln2/T½')}, ${F('N = N₀·e^(−λt)')}, פעילות ${F('R = λN')}, סדרה רדיואקטיבית.`,
+ trad:`עוסקים בגרעין-אב בודד שדועך בעקומה מעריכית חלקה, במספר גדול מאוד של גרעינים.`,
+ ext:{complex:`שרשרת ${F('A → B → C')}: הגרעין B נוצר מ-A ודועך בעצמו באותו זמן.`,
+      laws:`כל גרעין מתפרק באקראי, וההסתברות להתפרקות בצעד זמן קטן היא ${F('λ·Δt')} (סימולציית מונטה-קרלו). כך רואים את האופי ההסתברותי שהתכנית מדגישה.`,
+      edge:`במספר גרעינים קטן התוצאה סוטה מהעקומה. כש-${F('T½(B) ≪ T½(A)')} נוצר שיווי משקל. כש-${F('T½(B) ≫ T½(A)')} הגרעין B מצטבר.`},
+ ai:{main:`מבקשים מה-AI סימולציית מונטה-קרלו של שרשרת הדעיכה, עם השוואה לפתרון האנליטי.`,
+     err:`ה-AI משתמש בהסתברות ${F('Δt/T½')} במקום ${F('λ·Δt = ln2·Δt/T½')}, ולכן זמן מחצית החיים בסימולציה ארוך מהנכון. התלמידים מגלים זאת כשהם בודקים מתי נשאר חצי מהגרעינים.`,
+     spar:`"אם אי אפשר לדעת מתי גרעין בודד יתפרק, איך אפשר לדעת בדיוק את זמן מחצית החיים?"`},
+ steps:{self:`חשבו כמה גרעינים נשארים מתוך 1000 אחרי 3 זמני מחצית חיים, ואת הפעילות ההתחלתית כשזמן מחצית החיים 5 דקות.`,
+   pe:`Write a Python Monte Carlo simulation of the decay chain A → B → C (C is stable), starting from N0 = 1000 nuclei of A, with half-lives T_A = 5 min and T_B = 2 min. In each time step, every nucleus decays with probability λ·Δt. Plot N_A, N_B and N_C versus time, compare them with the analytic solution, and find the time at which N_B is maximal. Run it also with N0 = 20 and explain the differences.`,
+   ph:`כתוב סימולציית מונטה-קרלו ב-Python של שרשרת הדעיכה A → B → C (‏C יציב), החל מ-1000 גרעינים של A, עם זמני מחצית חיים של 5 דקות ל-A ו-2 דקות ל-B. בכל צעד זמן כל גרעין מתפרק בהסתברות λ·Δt. שרטט את מספר הגרעינים מכל סוג כפונקציה של הזמן, השווה לפתרון האנליטי, ומצא מתי מספר הגרעינים של B מרבי. הרץ גם עם 20 גרעינים בהתחלה והסבר את ההבדלים.`,
+   crit:`בדקו את ההסתברות להתפרקות בכל צעד, אם צעד הזמן קטן מספיק, ואם המספר הכולל של הגרעינים נשמר.`,
+   valid:`מספר הגרעינים הכולל קבוע, מספר הגרעינים של A יורד לחצי אחרי 5 דקות, ומספר הגרעינים של B מרבי אחרי כ-4.4 דקות. במדגם קטן הסטיות מהעקומה גדולות.`},
+ val:{before:`התלמידים מציבים בנוסחת הדעיכה ולעיתים חושבים שזמן מחצית החיים קובע מתי גרעין מסוים יתפרק.`,
+   after:`התלמידים מבחינים בין אי-ודאות לגבי גרעין בודד לבין חוקיות סטטיסטית במדגם גדול, ומבינים סדרות רדיואקטיביות ותארוך.`,
+   m:[`הסבירו את ההבדל בין ${F('Δt/T½')} ל-${F('λ·Δt')} ואיך הוא משפיע על התוצאה.`,`נתחו את גרף B: למה הוא עולה ואחר כך יורד?`,`קבעו מאיזה מספר גרעינים הסימולציה קרובה לעקומה האנליטית בפחות מ-5%.`]},
+ sim:'decay', tasks:[`הקטינו את N₀ ל-20 והריצו כמה פעמים.`,`קבעו T½(B) קטן מאוד: מה היחס בין B ל-A?`,`השוו את רגע השיא של B לחישוב האנליטי.`]}
+];
+
+/* ============================== STORAGE ============================== */
+const KEY = 'aiPhysics.v1';
+let STORE = {};
+try { STORE = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ STORE = {}; }
+function saveStore(){ try { localStorage.setItem(KEY, JSON.stringify(STORE)); } catch(e){} }
+function st(id){ if(!STORE[id]) STORE[id] = {checks:[false,false,false,false,false], notes:'', fav:false}; return STORE[id]; }
+function status(id){
+  const s = STORE[id]; if(!s) return 0;
+  const c = s.checks.filter(Boolean).length;
+  return c===0 ? (s.notes && s.notes.trim() ? 1 : 0) : (c===s.checks.length ? 2 : 1);
+}
+const STATUS_TXT = ['לא התחלתי','בתהליך','הושלם'];
+const STATUS_CLS = ['','prog','done'];
+
+/* ============================== LIST VIEW ============================== */
+let filter = 'all', query = '';
+const $ = s => document.querySelector(s);
+function strip(html){ const d=document.createElement('div'); d.innerHTML=html; return d.textContent; }
+
+function renderList(){
+  const host = $('#groups'); host.innerHTML = '';
+  const q = query.trim();
+  let any = false;
+  ['mech','em','rad'].forEach(sk=>{
+    if(filter!=='all' && filter!=='fav' && filter!==sk) return;
+    const items = ACTS.filter(a=>a.s===sk).filter(a=> filter!=='fav' || (STORE[a.id]&&STORE[a.id].fav))
+      .filter(a=>{ if(!q) return true; const t=(a.title+' '+a.ch+' '+a.short+' '+strip(a.concepts)+' '+a.en).toLowerCase(); return t.includes(q.toLowerCase()); });
+    if(!items.length) return;
+    any = true;
+    const h = document.createElement('h2'); h.className='group-title';
+    h.innerHTML = `<span class="dot" style="background:${SUBJ[sk].color}"></span>${SUBJ[sk].name}`;
+    host.appendChild(h);
+    const g = document.createElement('div'); g.className='grid';
+    items.forEach(a=>{
+      const s = status(a.id), fav = !!(STORE[a.id]&&STORE[a.id].fav);
+      const c = document.createElement('div'); c.className='card'; c.tabIndex=0; c.setAttribute('role','button');
+      c.setAttribute('aria-label', a.title);
+      c.innerHTML = `<div class="ch"><span class="dot" style="background:${SUBJ[a.s].color}"></span>פרק ${a.n} · ${a.ch}</div>
+        <h3>${a.title}</h3><p>${a.short}</p>
+        <div class="meta"><span class="badge ${STATUS_CLS[s]}">${STATUS_TXT[s]}</span>
+        <button class="star" aria-pressed="${fav}" aria-label="סימון כמועדף" title="מועדף">★</button></div>`;
+      c.addEventListener('click', e=>{ if(e.target.closest('.star')) return; location.hash = a.id; });
+      c.addEventListener('keydown', e=>{ if((e.key==='Enter'||e.key===' ') && !e.target.closest('.star')){ e.preventDefault(); location.hash=a.id; }});
+      c.querySelector('.star').addEventListener('click', e=>{ e.stopPropagation(); const o=st(a.id); o.fav=!o.fav; saveStore(); renderList(); });
+      g.appendChild(c);
+    });
+    host.appendChild(g);
+  });
+  if(!any) host.innerHTML = `<div class="empty">${filter==='fav' ? 'עדיין לא סימנתם פעילויות כמועדפות. לחצו על ★ בכרטיס כדי להוסיף.' : 'לא נמצאו פעילויות שמתאימות לחיפוש.'}</div>`;
+  updateProgress();
+}
+function updateProgress(){
+  const done = ACTS.filter(a=>status(a.id)===2).length;
+  $('#progText').textContent = `${done} / ${ACTS.length} הושלמו`;
+  $('#progBar').style.width = (100*done/ACTS.length)+'%';
+}
+document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+  filter=b.dataset.f; document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x===b)); renderList();
+}));
+$('#search').addEventListener('input', e=>{ query=e.target.value; renderList(); });
+
+/* ============================== DETAIL VIEW ============================== */
+const TABS = [
+  ['t1','1. גבולות'],['t2','2. מתיחת הגבולות'],['t3','3. דפוס ה-AI'],['t4','4. מהלך הפעילות'],['t5','5. ערך מוסף'],['sim','סימולציה'],['nb','המחברת שלי']
+];
+let curTab = 't1';
+try { curTab = sessionStorage.getItem('aiPhys.tab') || 't1'; } catch(e){}
+
+function renderDetail(id){
+  const a = ACTS.find(x=>x.id===id); if(!a) return showList();
+  stopSim();
+  $('#listView').classList.add('hidden');
+  const v = $('#detailView'); v.classList.remove('hidden');
+  const idx = ACTS.indexOf(a), prev = ACTS[idx-1], next = ACTS[idx+1];
+  const o = st(a.id);
+  v.innerHTML = `
+    <div class="detail-head">
+      <div>
+        <div class="crumbs"><button class="btn small" id="backBtn">→ כל הפעילויות</button>
+          <span class="badge" style="color:${SUBJ[a.s].color}">${SUBJ[a.s].name} · פרק ${a.n}: ${a.ch}</span></div>
+        <h2>${a.title}</h2>
+        <div class="en">${a.en}</div>
+      </div>
+      <button class="star" id="favBtn" aria-pressed="${o.fav}" aria-label="סימון כמועדף" title="מועדף" style="font-size:1.6rem">★</button>
+    </div>
+    <p style="margin:0;color:var(--muted);font-size:.92rem"><b>בתכנית הלימודים:</b> ${a.ref}</p>
+    <div class="tabs" role="tablist">${TABS.map(([k,l])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${k===curTab}">${l}</button>`).join('')}</div>
+    <div class="panel" id="panel"></div>
+    <div class="nav-bottom">
+      ${prev?`<button class="btn" data-go="${prev.id}">→ ${prev.title}</button>`:'<span></span>'}
+      ${next?`<button class="btn" data-go="${next.id}">${next.title} ←</button>`:'<span></span>'}
+    </div>`;
+  $('#backBtn').onclick = ()=>{ location.hash=''; };
+  $('#favBtn').onclick = e=>{ o.fav=!o.fav; saveStore(); e.currentTarget.setAttribute('aria-pressed',o.fav); };
+  v.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ location.hash=b.dataset.go; });
+  v.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ curTab=b.dataset.t; try{sessionStorage.setItem('aiPhys.tab',curTab);}catch(e){}
+    v.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected', x===b)); renderPanel(a); });
+  renderPanel(a);
+  window.scrollTo(0,0);
+}
+
+function promptBox(en, he){
+  return `<div class="prompt"><button class="btn small copy" data-copy>העתקה</button><pre>${en}</pre><div class="he">${he}</div></div>`;
+}
+function renderPanel(a){
+  stopSim();
+  const p = $('#panel'); const o = st(a.id);
+  if(curTab==='t1'){
+    p.innerHTML = `<h3>שם הנושא ומושגים מרכזיים</h3><p>${a.concepts}</p>
+      <h3>גבולות הלמידה המסורתית</h3><p>${a.trad}</p>`;
+  } else if(curTab==='t2'){
+    p.innerHTML = `<div class="kv">
+      <div><b>מערכת מורכבת</b>${a.ext.complex}</div>
+      <div><b>שינוי חוקים</b>${a.ext.laws}</div>
+      <div><b>מקרי קצה ותנאי שפה</b>${a.ext.edge}</div></div>
+      <p style="margin-top:12px"><button class="btn primary" data-tab="sim">לסימולציה שבודקת את זה ←</button></p>`;
+  } else if(curTab==='t3'){
+    p.innerHTML = `<h3>הדפוס שנבחר: מחולל קוד וסימולציות</h3><p>${a.ai.main}</p>
+      <h3>שימושים חלופיים</h3>
+      <div class="kv"><div><b>מבקר פיזיקלי (Error Analysis)</b>${a.ai.err}</div>
+      <div><b>שותף לאימון (Sparring Partner)</b>${a.ai.spar}</div></div>`;
+  } else if(curTab==='t4'){
+    const lbl = ['עבודה עצמית','אינטראקציה עם AI','ניתוח ביקורתי','הערכת תקפות פיזיקלית'];
+    const body = [a.steps.self, `הזינו ל-AI את הבעיה המורחבת בעזרת הפרומפט המובנה:${promptBox(a.steps.pe,a.steps.ph)}`, a.steps.crit, a.steps.valid];
+    p.innerHTML = `<ol class="steps">${lbl.map((l,i)=>`<li><label class="chk"><input type="checkbox" data-c="${i}" ${o.checks[i]?'checked':''}> ${i+1}. ${l}</label><div>${body[i]}</div></li>`).join('')}</ol>`;
+  } else if(curTab==='t5'){
+    p.innerHTML = `<div class="matrix"><div class="b"><b>מצב לפני (Baseline)</b>${a.val.before}</div><div class="a"><b>מצב אחרי (AI-Enhanced)</b>${a.val.after}</div></div>
+      <h3>מדדי הערכה</h3><p>כדי להבטיח למידה משמעותית, עליכם:</p>
+      <ol class="metrics" type="א">${a.val.m.map(x=>`<li>${x}</li>`).join('')}</ol>
+      <p>את התשובות כתבו ב<a href="#" data-tab="nb">מחברת</a>.</p>
+      <label class="chkrow"><input type="checkbox" data-c="4" ${o.checks[4]?'checked':''}> עניתי על מדדי ההערכה</label>`;
+  } else if(curTab==='sim'){
+    p.innerHTML = `<p style="color:var(--muted)">הזיזו את המחוונים וראו איך המערכת מגיבה. הסימולציה פותרת את משוואות התנועה נומרית בדפדפן, כמו שהקוד שתבקשו מה-AI אמור לעשות, ולכן היא גם כלי לבדיקת התשובה שלו.</p>
+      <div id="simHost"></div><h3>מה כדאי לנסות</h3><ol class="tasks">${a.tasks.map(t=>`<li>${t}</li>`).join('')}</ol>`;
+    mountSim($('#simHost'), a.sim);
+  } else if(curTab==='nb'){
+    p.innerHTML = `<p>כאן כותבים תשובות, תוצאות והערות. התוכן נשמר אוטומטית בדפדפן הזה.</p>
+      <ol class="metrics" type="א">${a.val.m.map(x=>`<li>${x}</li>`).join('')}</ol>
+      <textarea class="nb" id="nb" placeholder="התשובות שלי..."></textarea><div class="saved" id="savedMsg"></div>`;
+    const ta = $('#nb'); ta.value = o.notes || '';
+    let t; ta.addEventListener('input', ()=>{ o.notes = ta.value; clearTimeout(t); t=setTimeout(()=>{ saveStore(); $('#savedMsg').textContent='נשמר'; setTimeout(()=>{const m=$('#savedMsg'); if(m) m.textContent='';},1200); },400); });
+  }
+  p.querySelectorAll('input[data-c]').forEach(cb=>cb.addEventListener('change',()=>{ o.checks[+cb.dataset.c]=cb.checked; saveStore(); updateProgress(); }));
+  p.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',e=>{ e.preventDefault(); curTab=b.dataset.tab; document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected', x.dataset.t===curTab)); renderPanel(a); }));
+  p.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{
+    const txt = b.parentElement.querySelector('pre').textContent;
+    const done = ()=>{ b.textContent='הועתק ✓'; setTimeout(()=>b.textContent='העתקה',1500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, ()=>fallbackCopy(txt,done)); } else fallbackCopy(txt,done);
+  }));
+}
+function fallbackCopy(txt, done){
+  const t=document.createElement('textarea'); t.value=txt; document.body.appendChild(t); t.select();
+  try{ document.execCommand('copy'); done(); }catch(e){} t.remove();
+}
+function showList(){ stopSim(); $('#detailView').classList.add('hidden'); $('#listView').classList.remove('hidden'); renderList(); }
+function route(){ const id = location.hash.replace('#',''); if(id && ACTS.some(a=>a.id===id)) renderDetail(id); else showList(); }
+window.addEventListener('hashchange', route);
+
+$('#exportBtn').onclick = ()=>{
+  let out = 'המחברת שלי: פיזיקה מתקדמת עם בינה מלאכותית\n\n';
+  ACTS.forEach(a=>{ const s=STORE[a.id]; if(!s) return;
+    out += `=== ${SUBJ[a.s].name}, פרק ${a.n}: ${a.title} (${STATUS_TXT[status(a.id)]}) ===\n${(s.notes||'').trim()||'(אין הערות)'}\n\n`; });
+  const blob = new Blob(['﻿'+out],{type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const l=document.createElement('a'); l.href=url; l.download='my-physics-notebook.txt'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$('#resetBtn').onclick = ()=>{ if(confirm('למחוק את כל ההתקדמות, ההערות והמועדפים ששמורים בדפדפן הזה?')){ STORE={}; saveStore(); route(); } };
+
+/* ============================== PLOTTING ============================== */
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function COLORS(){ return {ink:cssv('--ink'),muted:cssv('--muted'),grid:cssv('--grid'),line:cssv('--line'),surface:cssv('--surface'),surface2:cssv('--surface2'),accent:cssv('--accent'),s:[cssv('--s1'),cssv('--s2'),cssv('--s3'),cssv('--s4')]}; }
+function prep(cv){
+  const dpr = window.devicePixelRatio||1, w = cv.clientWidth||600, h = cv.clientHeight||260;
+  if(cv.width!==Math.round(w*dpr) || cv.height!==Math.round(h*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  return {ctx,w,h};
+}
+function ticks(min,max,n){
+  const span=(max-min)||1, s0=span/n, mag=Math.pow(10,Math.floor(Math.log10(s0))), e=s0/mag;
+  const step=(e>=7.5?10:e>=3.5?5:e>=1.5?2:1)*mag; const t=[];
+  for(let v=Math.ceil(min/step)*step; v<=max+step*1e-9; v+=step) t.push(Math.abs(v)<step*1e-9?0:v);
+  return t;
+}
+function fmt(v){ const a=Math.abs(v); if(a!==0 && (a>=1e5||a<1e-3)) return v.toExponential(1); return String(+v.toPrecision(4)); }
+function num(v,d=2){ if(!isFinite(v)) return '∞'; if(Math.abs(v)<1e-6) v=0; const a=Math.abs(v); if(a!==0&&(a>=1e5||a<1e-3)) return v.toExponential(2); return v.toFixed(d); }
+function drawPlot(cv, spec, C){
+  const {ctx,w,h} = prep(cv);
+  const L=56,R=14,T=30,B=36, pw=w-L-R, ph=h-T-B;
+  let xs=[],ys=[];
+  spec.series.forEach(s=>s.pts.forEach(p=>{ if(isFinite(p[0])&&isFinite(p[1])){xs.push(p[0]);ys.push(p[1]);} }));
+  (spec.marks||[]).forEach(m=>{xs.push(m[0]);ys.push(m[1]);});
+  (spec.hl||[]).forEach(m=>ys.push(m.y));
+  let x0 = spec.x?spec.x[0]:Math.min(...xs), x1 = spec.x?spec.x[1]:Math.max(...xs);
+  let y0 = spec.y?spec.y[0]:Math.min(...ys), y1 = spec.y?spec.y[1]:Math.max(...ys);
+  if(!isFinite(x0)){x0=0;x1=1;} if(!isFinite(y0)){y0=0;y1=1;}
+  if(x1===x0){x1+=1;x0-=1;} if(y1===y0){y1+=1;y0-=1;}
+  if(!spec.y){ const pad=(y1-y0)*0.06; y0-=pad; y1+=pad; if(spec.y0zero && y0>0) y0=0; }
+  const X=v=>L+(v-x0)/(x1-x0)*pw, Y=v=>T+ph-(v-y0)/(y1-y0)*ph;
+  ctx.font='11px Segoe UI, Arial, sans-serif'; ctx.lineWidth=1;
+  const xt=ticks(x0,x1,Math.max(3,Math.floor(pw/80))), yt=ticks(y0,y1,Math.max(3,Math.floor(ph/45)));
+  ctx.strokeStyle=C.grid; ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.textBaseline='top';
+  xt.forEach(v=>{ const x=X(v); ctx.beginPath(); ctx.moveTo(x,T); ctx.lineTo(x,T+ph); ctx.stroke(); ctx.fillText(fmt(v),x,T+ph+4); });
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  yt.forEach(v=>{ const y=Y(v); ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(L+pw,y); ctx.stroke(); ctx.fillText(fmt(v),L-5,y); });
+  ctx.strokeStyle=C.muted; ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,T+ph); ctx.lineTo(L+pw,T+ph); ctx.stroke();
+  if(y0<0&&y1>0){ ctx.strokeStyle=C.muted; ctx.globalAlpha=.5; ctx.beginPath(); ctx.moveTo(L,Y(0)); ctx.lineTo(L+pw,Y(0)); ctx.stroke(); ctx.globalAlpha=1; }
+  ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(spec.xl||'',L+pw/2,h-1);
+  ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(spec.yl||'',4,4);
+  ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
+  (spec.vl||[]).forEach(v=>{ ctx.strokeStyle=v.c!==undefined?colorOf(v.c,C):C.muted; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X(v.x),T); ctx.lineTo(X(v.x),T+ph); ctx.stroke(); ctx.setLineDash([]); if(v.label){ ctx.fillStyle=ctx.strokeStyle; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(v.label,X(v.x)+3,T+3);} });
+  (spec.hl||[]).forEach(v=>{ ctx.strokeStyle=C.muted; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(L,Y(v.y)); ctx.lineTo(L+pw,Y(v.y)); ctx.stroke(); ctx.setLineDash([]); if(v.label){ ctx.fillStyle=C.muted; ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText(v.label,L+pw-3,Y(v.y)-2);} });
+  spec.series.forEach(s=>{
+    ctx.strokeStyle=colorOf(s.c,C); ctx.lineWidth=s.w||2; ctx.setLineDash(s.dash?[6,4]:[]); ctx.lineJoin='round';
+    if(s.dotsOnly){ ctx.fillStyle=ctx.strokeStyle; s.pts.forEach(p=>{ ctx.beginPath(); ctx.arc(X(p[0]),Y(p[1]),3,0,7); ctx.fill(); }); }
+    else { ctx.beginPath(); let st=false; s.pts.forEach(p=>{ if(!isFinite(p[1])){st=false;return;} const x=X(p[0]),y=Y(Math.max(y0-(y1-y0)*2,Math.min(y1+(y1-y0)*2,p[1]))); if(!st){ctx.moveTo(x,y);st=true;} else ctx.lineTo(x,y); }); ctx.stroke();
+      if(s.dots){ ctx.fillStyle=ctx.strokeStyle; s.pts.forEach(p=>{ ctx.beginPath(); ctx.arc(X(p[0]),Y(p[1]),2.6,0,7); ctx.fill(); }); } }
+  });
+  ctx.setLineDash([]);
+  (spec.marks||[]).forEach(m=>{ ctx.fillStyle=colorOf(m[2]===undefined?1:m[2],C); ctx.beginPath(); ctx.arc(X(m[0]),Y(m[1]),5,0,7); ctx.fill(); });
+  ctx.restore();
+  // legend (right to left)
+  let lx = w-R; ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.font='12px Segoe UI, Arial, sans-serif';
+  spec.series.filter(s=>s.n).forEach(s=>{
+    const tw=ctx.measureText(s.n).width; ctx.fillStyle=C.ink; ctx.fillText(s.n,lx,15);
+    ctx.strokeStyle=colorOf(s.c,C); ctx.lineWidth=2.5; ctx.setLineDash(s.dash?[5,3]:[]); ctx.beginPath(); ctx.moveTo(lx-tw-22,15); ctx.lineTo(lx-tw-5,15); ctx.stroke(); ctx.setLineDash([]);
+    lx -= tw+36;
+  });
+}
+function colorOf(c,C){ return typeof c==='number'?C.s[c%4]:c; }
+
+/* ============================== SIM ENGINE ============================== */
+let CUR = null;
+function stopSim(){ if(CUR && CUR.raf) cancelAnimationFrame(CUR.raf); CUR=null; }
+function mountSim(host, key){
+  stopSim();
+  const sim = SIMS[key]; const p = {};
+  sim.params.forEach(q=>p[q.k]=q.v);
+  host.innerHTML = `<div class="sim-ctrls"></div><div class="sim-btns"></div><div class="sim-view"></div><div class="readout"></div>`;
+  const ctr = host.querySelector('.sim-ctrls');
+  sim.params.forEach(q=>{
+    const d=document.createElement('div'); d.className='ctrl';
+    if(q.opts){
+      d.innerHTML = `<label><span>${q.l}</span></label><select>${q.opts.map((o,i)=>`<option value="${i}" ${i===q.v?'selected':''}>${o}</option>`).join('')}</select>`;
+      d.querySelector('select').addEventListener('change',e=>{ p[q.k]=+e.target.value; refresh(true); });
+    } else {
+      const id='r_'+q.k;
+      d.innerHTML = `<label for="${id}"><span>${q.l}</span><output>${fmtP(q.v,q)}</output></label><input id="${id}" type="range" min="${q.min}" max="${q.max}" step="${q.st}" value="${q.v}">`;
+      const inp=d.querySelector('input'), out=d.querySelector('output');
+      inp.addEventListener('input',()=>{ p[q.k]=+inp.value; out.textContent=fmtP(p[q.k],q); refresh(true); });
+    }
+    ctr.appendChild(d);
+  });
+  const btns = host.querySelector('.sim-btns');
+  const mk = (t,f,cls='btn small')=>{ const b=document.createElement('button'); b.className=cls; b.textContent=t; b.onclick=f; btns.appendChild(b); return b; };
+  if(sim.anim){
+    const pb = mk('⏸ עצירה', ()=>{ CUR.playing=!CUR.playing; pb.textContent=CUR.playing?'⏸ עצירה':'▶ הפעלה'; if(CUR.playing) loop0(); }, 'btn small primary');
+    mk('↺ התחלה מחדש', ()=>refresh(true));
+  }
+  if(sim.random) mk('🎲 הרצה חוזרת', ()=>refresh(true));
+  mk('איפוס ערכים', ()=>mountSim(host,key));
+  const view = host.querySelector('.sim-view');
+  let main=null; if(sim.draw||sim.anim){ main=document.createElement('canvas'); main.className='cv'; main.setAttribute('role','img'); main.setAttribute('aria-label','סימולציה'); view.appendChild(main); }
+  CUR = {sim,p,host,view,main,plots:[],readout:host.querySelector('.readout'),playing:true,state:null,raf:0,last:0,lastInfo:0};
+  function refresh(re){ if(!CUR||CUR.sim!==sim) return; renderSim(re); }
+  CUR.refresh = refresh;
+  renderSim(true);
+}
+function fmtP(v,q){ const d = q.st>=1?0:(String(q.st).split('.')[1]||'').length; return (+v).toFixed(d)+(q.u?' '+q.u:''); }
+function renderSim(re){
+  const c=CUR; if(!c) return; const C=COLORS(); let info='';
+  if(c.sim.anim){
+    if(re||!c.state) c.state=c.sim.init(c.p);
+    const {ctx,w,h}=prep(c.main); c.sim.draw(ctx,w,h,c.state,c.p,C);
+    c.readout.innerHTML = c.sim.info(c.state,c.p);
+    if(c.playing) loop0();
+    return;
+  }
+  if(c.sim.draw){ const {ctx,w,h}=prep(c.main); info += c.sim.draw(ctx,w,h,c.p,C)||''; }
+  if(c.sim.run){
+    const r=c.sim.run(c.p); const specs=r.plots;
+    while(c.plots.length<specs.length){ const cv=document.createElement('canvas'); cv.className='cv plot'; cv.setAttribute('role','img'); cv.setAttribute('aria-label','גרף'); c.view.appendChild(cv); c.plots.push(cv); }
+    while(c.plots.length>specs.length){ c.plots.pop().remove(); }
+    specs.forEach((s,i)=>drawPlot(c.plots[i],s,C));
+    info += r.info||'';
+  }
+  c.readout.innerHTML = info;
+}
+function loop0(){ const c=CUR; if(!c||c.raf) return; c.last=performance.now(); c.raf=requestAnimationFrame(loop); }
+function loop(ts){
+  const c=CUR; if(!c) return; c.raf=0;
+  if(!c.playing) return;
+  const dt=Math.min(0.05,(ts-c.last)/1000); c.last=ts;
+  c.sim.step(c.state,dt,c.p);
+  const C=COLORS(); const {ctx,w,h}=prep(c.main); c.sim.draw(ctx,w,h,c.state,c.p,C);
+  if(ts-c.lastInfo>200){ c.readout.innerHTML=c.sim.info(c.state,c.p); c.lastInfo=ts; }
+  if(c.state.done){ c.readout.innerHTML=c.sim.info(c.state,c.p); return; }
+  c.raf=requestAnimationFrame(loop);
+}
+let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(()=>{ if(CUR && !CUR.sim.anim) renderSim(false); else if(CUR && !CUR.playing) renderSim(false); },120); });
+if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{ if(CUR) renderSim(false); });
+
+/* ============================== SIMULATIONS ============================== */
+const g = 9.8, PI = Math.PI;
+const SIMS = {};
+
+SIMS.freefall = {
+  params:[{k:'m',l:'מסה',u:'kg',min:.02,max:2,st:.01,v:.1},{k:'k',l:'מקדם התנגדות k',u:'kg/m',min:0,max:.02,st:.0005,v:.002},{k:'T',l:'משך הסימולציה',u:'s',min:2,max:20,st:1,v:10}],
+  run(p){
+    const dt=.005; let v=0; const a=[],b=[]; let t90=null; const vt=p.k>0?Math.sqrt(p.m*g/p.k):Infinity;
+    for(let i=0,t=0;t<=p.T+1e-9;i++,t=i*dt){ if(i%4===0){a.push([t,v]);b.push([t,g*t]);} if(t90===null&&v>=.9*vt) t90=t; v+=(g-p.k/p.m*v*v)*dt; }
+    const spec={xl:'t (s)',yl:'v (m/s)',series:[{n:'ללא התנגדות',c:1,pts:b,dash:1},{n:'עם התנגדות',c:0,pts:a}],hl:isFinite(vt)?[{y:vt,label:'vₜ'}]:[],y0zero:1};
+    const yMax=Math.min(g*p.T, isFinite(vt)?vt*1.6:g*p.T); spec.y=[0,Math.max(yMax,a[a.length-1][1]*1.1)];
+    return {plots:[spec],info:`מהירות סופית: <b>${F(isFinite(vt)?num(vt,1)+' m/s':'אין (k = 0)')}</b> · מהירות בסוף: ${F(num(a[a.length-1][1],1)+' m/s')} (בלי התנגדות: ${F(num(g*p.T,1)+' m/s')}) · 90% מ-vₜ אחרי: ${F(t90!==null?num(t90,2)+' s':'לא בטווח')}`};
+  }
+};
+
+SIMS.projectile = {
+  params:[{k:'v0',l:'מהירות התחלתית',u:'m/s',min:5,max:60,st:1,v:30},{k:'a',l:'זווית',u:'°',min:5,max:85,st:1,v:45},{k:'km',l:'k/m',u:'1/m',min:0,max:.05,st:.001,v:.01}],
+  fly(v0,a,km,rec){
+    const dt=.004; let x=0,y=0,vx=v0*Math.cos(a),vy=v0*Math.sin(a); const pts=rec?[[0,0]]:null; let ymax=0,xap=0,i=0;
+    while(true){ const s=Math.hypot(vx,vy); vx+=-km*s*vx*dt; vy+=(-g-km*s*vy)*dt; const px=x,py=y; x+=vx*dt; y+=vy*dt; i++;
+      if(y>ymax){ymax=y;xap=x;} if(rec&&i%5===0) pts.push([x,y]);
+      if(y<0){ const f=py/(py-y); x=px+(x-px)*f; if(rec) pts.push([x,0]); break;} if(i>2e5) break; }
+    return {R:x,H:ymax,xap,pts};
+  },
+  run(p){
+    const a=p.a*PI/180; const d=this.fly(p.v0,a,p.km,true);
+    const T=2*p.v0*Math.sin(a)/g, nd=[]; for(let i=0;i<=200;i++){ const t=T*i/200; nd.push([p.v0*Math.cos(a)*t, p.v0*Math.sin(a)*t-.5*g*t*t]); }
+    let best=0,bR=0; for(let ang=10;ang<=80;ang+=.5){ const R=p.km>0?this.fly(p.v0,ang*PI/180,p.km,false).R:p.v0*p.v0*Math.sin(2*ang*PI/180)/g; if(R>bR){bR=R;best=ang;} }
+    const R0=p.v0*p.v0*Math.sin(2*a)/g;
+    return {plots:[{xl:'x (m)',yl:'y (m)',series:[{n:'ללא התנגדות',c:1,pts:nd,dash:1},{n:'עם התנגדות',c:0,pts:d.pts}],y0zero:1}],
+      info:`טווח עם התנגדות: <b>${F(num(d.R,1)+' m')}</b> (בלי: ${F(num(R0,1)+' m')}) · גובה מרבי: ${F(num(d.H,1)+' m')} · שיא הגובה ב-${F(num(100*d.xap/d.R,0)+'%')} מהטווח · זווית אופטימלית: <b>${F(num(best,1)+'°')}</b>`};
+  }
+};
+
+SIMS.collision = {
+  params:[{k:'m1',l:'מסה m₁',u:'kg',min:.2,max:5,st:.1,v:1},{k:'m2',l:'מסה m₂',u:'kg',min:.2,max:20,st:.1,v:1},{k:'v1',l:'מהירות התחלתית v₁',u:'m/s',min:.5,max:4,st:.1,v:2},{k:'c',l:'ריסון בפגוש c',u:'N·s/m',min:0,max:10,st:.1,v:0}],
+  run(p){
+    const k=200, dt=1e-4, gap=.15, T=gap/p.v1+1.0; let x1=0,x2=gap,v1=p.v1,v2=0,Fmax=0,tc0=null,tc1=null;
+    const A=[],B=[],P=[],E=[];
+    for(let i=0,t=0;t<=T;i++,t=i*dt){
+      const comp=-(x2-x1-0); let Fc=0;
+      if(comp>0){ Fc=Math.max(0,k*comp+p.c*(v1-v2)); if(tc0===null) tc0=t; tc1=t; }
+      Fmax=Math.max(Fmax,Fc);
+      v1+=-Fc/p.m1*dt; v2+=Fc/p.m2*dt; x1+=v1*dt; x2+=v2*dt;
+      if(i%40===0){ A.push([t,v1]); B.push([t,v2]); P.push([t,p.m1*v1+p.m2*v2]); E.push([t,.5*p.m1*v1*v1+.5*p.m2*v2*v2]); }
+    }
+    const e=(v2-v1)/p.v1, E0=.5*p.m1*p.v1*p.v1, Ef=.5*p.m1*v1*v1+.5*p.m2*v2*v2;
+    return {plots:[{xl:'t (s)',yl:'v (m/s)',series:[{n:'v₁',c:0,pts:A},{n:'v₂',c:1,pts:B}]},
+                   {xl:'t (s)',yl:'p (kg·m/s), E (J)',series:[{n:'תנע כולל',c:2,pts:P},{n:'אנרגיה קינטית כוללת',c:3,pts:E}],y0zero:1}],
+      info:`מהירויות סופיות: ${F('v₁ = '+num(v1)+' m/s')}, ${F('v₂ = '+num(v2)+' m/s')} · מקדם השבה: <b>${F('e = '+num(e))}</b> · אנרגיה שאבדה: ${F(num(100*(1-Ef/E0),1)+'%')} · משך המגע: ${F(tc0!==null?num((tc1-tc0)*1000,0)+' ms':'—')} · כוח מרבי: ${F(num(Fmax,1)+' N')}`};
+  }
+};
+
+SIMS.springfric = {
+  params:[{k:'k',l:'קבוע הקפיץ k',u:'N/m',min:5,max:50,st:1,v:20},{k:'mu',l:'מקדם חיכוך μ',u:'',min:0,max:.4,st:.01,v:.1},{k:'x0',l:'מתיחה התחלתית x₀',u:'m',min:.05,max:.5,st:.01,v:.3}],
+  run(p){
+    const m=1, dt=5e-4, T=15, fr=p.mu*m*g; let x=p.x0, v=0, stuck=false, tStop=null, path=0;
+    const X=[],K=[],U=[],Et=[];
+    for(let i=0,t=0;t<=T;i++,t=i*dt){
+      if(!stuck){
+        if(v===0){ if(Math.abs(p.k*x)<=fr){ stuck=true; tStop=t; } else { const a=(-p.k*x+Math.sign(x)*fr)/m; v+=a*dt; } }
+        else { const a=(-p.k*x-Math.sign(v)*fr)/m; const nv=v+a*dt; if(Math.sign(nv)!==Math.sign(v)) v=0; else v=nv; }
+        const dx=v*dt; x+=dx; path+=Math.abs(dx);
+      }
+      if(i%60===0){ X.push([t,x]); const ek=.5*m*v*v,u=.5*p.k*x*x; K.push([t,ek]); U.push([t,u]); Et.push([t,ek+u]); }
+    }
+    const E0=.5*p.k*p.x0*p.x0, Ef=.5*p.k*x*x;
+    return {plots:[{xl:'t (s)',yl:'x (m)',series:[{n:'x(t)',c:0,pts:X}]},
+                   {xl:'t (s)',yl:'E (J)',series:[{n:'קינטית',c:1,pts:K},{n:'אלסטית',c:2,pts:U},{n:'מכנית כוללת',c:3,pts:Et,w:2.5}],y0zero:1}],
+      info:`${stuck?`הגוף נעצר אחרי ${F(num(tStop,2)+' s')} ב-${F('x = '+num(x,3)+' m')}`:'הגוף עדיין זז בסוף הסימולציה'} · ירידת משרעת צפויה לכל חצי מחזור: ${F('2μmg/k = '+num(2*fr/p.k,3)+' m')} · אנרגיה שאבדה: ${F(num(E0-Ef,3)+' J')} · עבודת החיכוך ${F('μmg·s = '+num(fr*path,3)+' J')}`};
+  }
+};
+
+SIMS.gas = {
+  anim:true,
+  params:[{k:'N',l:'מספר חלקיקים',u:'',min:10,max:200,st:1,v:60},{k:'s',l:'מהירות (טמפרטורה)',u:'',min:.5,max:3,st:.1,v:1},{k:'r',l:'רדיוס חלקיק',u:'',min:0,max:3,st:.1,v:.8}],
+  W:100, H:60,
+  init(p){
+    const W=this.W,H=this.H,r=p.r, P=[];
+    for(let i=0;i<p.N;i++){ let x,y,ok,tries=0; do{ x=r+Math.random()*(W-2*r); y=r+Math.random()*(H-2*r); ok=true; if(r>0) for(const q of P){ if((q.x-x)**2+(q.y-y)**2<4*r*r){ok=false;break;} } tries++; }while(!ok&&tries<200);
+      const a=Math.random()*2*PI, sp=20*p.s; P.push({x,y,vx:sp*Math.cos(a),vy:sp*Math.sin(a)}); }
+    return {P,imp:0,time:0,t:0};
+  },
+  step(S,dt,p){
+    const W=this.W,H=this.H,r=p.r, n=6, h=dt/n;
+    for(let k=0;k<n;k++){
+      for(const a of S.P){ a.x+=a.vx*h; a.y+=a.vy*h;
+        if(a.x<r){a.x=2*r-a.x; S.imp+=2*Math.abs(a.vx); a.vx=Math.abs(a.vx);} if(a.x>W-r){a.x=2*(W-r)-a.x; S.imp+=2*Math.abs(a.vx); a.vx=-Math.abs(a.vx);}
+        if(a.y<r){a.y=2*r-a.y; S.imp+=2*Math.abs(a.vy); a.vy=Math.abs(a.vy);} if(a.y>H-r){a.y=2*(H-r)-a.y; S.imp+=2*Math.abs(a.vy); a.vy=-Math.abs(a.vy);} }
+      if(r>0){ const P=S.P, d2=4*r*r;
+        for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){ const a=P[i],b=P[j], dx=b.x-a.x, dy=b.y-a.y, dd=dx*dx+dy*dy;
+          if(dd<d2&&dd>0){ const d=Math.sqrt(dd), nx=dx/d, ny=dy/d, rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+            if(rv<0){ a.vx+=rv*nx; a.vy+=rv*ny; b.vx-=rv*nx; b.vy-=rv*ny; }
+            const ov=(2*r-d)/2; a.x-=nx*ov; a.y-=ny*ov; b.x+=nx*ov; b.y+=ny*ov; } } }
+      S.time+=h; S.t+=h;
+    }
+  },
+  stats(S,p){
+    const W=this.W-2*p.r,H=this.H-2*p.r; let ke=0; S.P.forEach(a=>ke+=.5*(a.vx*a.vx+a.vy*a.vy)); const kT=ke/S.P.length;
+    const Pm=S.time>0?S.imp/(S.time*2*(W+H)):0, Pi=S.P.length*kT/(W*H); return {kT,Pm,Pi};
+  },
+  draw(ctx,w,h,S,p,C){
+    const pad=10, sc=Math.min((w-2*pad)/this.W,(h-2*pad)/this.H), ox=(w-sc*this.W)/2, oy=(h-sc*this.H)/2;
+    ctx.strokeStyle=C.ink; ctx.lineWidth=2; ctx.strokeRect(ox,oy,sc*this.W,sc*this.H);
+    const vref=20*p.s;
+    S.P.forEach(a=>{ const sp=Math.hypot(a.vx,a.vy)/vref; ctx.fillStyle=sp>1.3?C.s[1]:sp<.7?C.s[0]:C.s[2]; ctx.beginPath(); ctx.arc(ox+a.x*sc,oy+a.y*sc,Math.max(2,p.r*sc),0,7); ctx.fill(); });
+  },
+  info(S,p){ const s=this.stats(S,p); const ratio=s.Pi>0?s.Pm/s.Pi:0;
+    return `לחץ נמדד: ${F(num(s.Pm,2))} · ניבוי הגז האידאלי ${F('N·kT/A = '+num(s.Pi,2))} · <b>יחס: ${F(num(ratio,3))}</b> · זמן מדידה: ${F(num(S.time,1)+' s')}<br><span style="color:var(--muted)">צבע לפי מהירות: כחול איטי, ירוק ממוצע, אדום מהיר. יחידות הסימולציה שרירותיות (מסת חלקיק 1).</span>`; }
+};
+
+SIMS.pendulum = {
+  params:[{k:'L',l:'אורך',u:'m',min:.2,max:2,st:.05,v:1},{k:'th',l:'זווית התחלתית θ₀',u:'°',min:5,max:175,st:1,v:60},{k:'b',l:'ריסון b',u:'1/s',min:0,max:.5,st:.01,v:.1},{k:'T',l:'משך',u:'s',min:5,max:40,st:1,v:20}],
+  rk(th,om,b,L,dt){ const f=(a,w)=>[w,-(g/L)*Math.sin(a)-b*w];
+    const k1=f(th,om),k2=f(th+k1[0]*dt/2,om+k1[1]*dt/2),k3=f(th+k2[0]*dt/2,om+k2[1]*dt/2),k4=f(th+k3[0]*dt,om+k3[1]*dt);
+    return [th+dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]), om+dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1])]; },
+  run(p){
+    const dt=.002, th0=p.th*PI/180, w0=Math.sqrt(g/p.L); let th=th0,om=0; const N=[],Lin=[];
+    const wd=Math.sqrt(Math.max(1e-9,w0*w0-p.b*p.b/4));
+    for(let i=0,t=0;t<=p.T;i++,t=i*dt){ if(i%10===0){ N.push([t,th*180/PI]); Lin.push([t,p.th*Math.exp(-p.b*t/2)*Math.cos(wd*t)]); } [th,om]=this.rk(th,om,p.b,p.L,dt); }
+    let a=th0,w=0,t=0; while(a>0&&t<200){ const pa=a,pt=t; [a,w]=this.rk(a,w,0,p.L,dt); t+=dt; if(a<=0){ t=pt+dt*pa/(pa-a); } }
+    const Tq=4*t, T0=2*PI/w0;
+    return {plots:[{xl:'t (s)',yl:'θ (°)',series:[{n:'קירוב זווית קטנה',c:1,pts:Lin,dash:1},{n:'פתרון נומרי מלא',c:0,pts:N}]}],
+      info:`זמן מחזור בנוסחה ${F('2π√(L/g) = '+num(T0,3)+' s')} · זמן מחזור אמיתי (בלי ריסון): <b>${F(num(Tq,3)+' s')}</b> · ארוך ב-${F(num(100*(Tq/T0-1),2)+'%')}`};
+  }
+};
+
+SIMS.orbit = {
+  anim:true,
+  params:[{k:'f',l:'מהירות שיגור (ביחס למעגל)',u:'',min:.3,max:1.6,st:.01,v:1.2},{k:'n',l:'מעריך בחוק הכוח 1/rⁿ',u:'',min:1.8,max:2.4,st:.05,v:2},{k:'meth',l:'שיטה נומרית',opts:['Leapfrog (velocity Verlet)','אוילר פשוט'],v:0},{k:'dt',l:'צעד זמן',u:'',min:.002,max:.05,st:.002,v:.01}],
+  acc(x,y,n){ const r=Math.hypot(x,y), a=-1/Math.pow(r,n+1); return [a*x,a*y]; },
+  energy(S,n){ const r=Math.hypot(S.x,S.y), v2=S.vx*S.vx+S.vy*S.vy; const U=n===2?-1/r:-1/((n-1)*Math.pow(r,n-1)); return v2/2+U; },
+  init(p){ const S={x:1,y:0,vx:0,vy:p.f,t:0,trail:[[1,0]],done:false,msg:''}; S.E0=this.energy(S,p.n);
+    const a=1/(2-p.f*p.f); S.view=(p.n===2&&p.f<Math.SQRT2)?Math.min(8,Math.max(1.3,(2*a-1)*1.15)):3.5; if(p.f<1) S.view=1.3; return S; },
+  step(S,dt,p){ if(S.done) return; const steps=Math.max(1,Math.round(.6*dt/p.dt*8));
+    for(let i=0;i<steps;i++){ const h=p.dt;
+      if(p.meth===1){ const [ax,ay]=this.acc(S.x,S.y,p.n); S.x+=S.vx*h; S.y+=S.vy*h; S.vx+=ax*h; S.vy+=ay*h; }
+      else { let [ax,ay]=this.acc(S.x,S.y,p.n); S.vx+=ax*h/2; S.vy+=ay*h/2; S.x+=S.vx*h; S.y+=S.vy*h; [ax,ay]=this.acc(S.x,S.y,p.n); S.vx+=ax*h/2; S.vy+=ay*h/2; }
+      S.t+=h; const r=Math.hypot(S.x,S.y);
+      if(r<.06){ S.done=true; S.msg='הלוויין התרסק בכוכב'; break; } if(r>25){ S.done=true; S.msg='הלוויין ברח'; break; } }
+    const L=S.trail[S.trail.length-1]; if(Math.hypot(S.x-L[0],S.y-L[1])>.01) S.trail.push([S.x,S.y]); if(S.trail.length>6000) S.trail.shift(); },
+  draw(ctx,w,h,S,p,C){ const sc=Math.min(w,h)/2/S.view, cx=w/2, cy=h/2;
+    ctx.fillStyle=C.s[3]; ctx.beginPath(); ctx.arc(cx,cy,Math.max(5,.06*sc),0,7); ctx.fill();
+    ctx.strokeStyle=C.s[0]; ctx.lineWidth=1.5; ctx.beginPath(); S.trail.forEach((q,i)=>{ const X=cx+q[0]*sc, Y=cy-q[1]*sc; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke();
+    ctx.fillStyle=C.s[1]; ctx.beginPath(); ctx.arc(cx+S.x*sc,cy-S.y*sc,4.5,0,7); ctx.fill(); },
+  info(S,p){ const E=this.energy(S,p.n), dE=Math.abs(S.E0)>1e-9?100*(E-S.E0)/Math.abs(S.E0):0; let kep='';
+    if(p.n===2){ if(p.f<Math.SQRT2){ const a=1/(2-p.f*p.f); kep=` · זמן מחזור לפי קפלר ${F('2π·a^1.5 = '+num(2*PI*Math.pow(a,1.5),2))} (חצי ציר גדול ${F(num(a,2))})`; } else kep=' · אנרגיה כוללת ≥ 0: מסלול בריחה'; }
+    return `זמן: ${F(num(S.t,1))} · אנרגיה כוללת: ${F(num(E,4))} · <b>שינוי באנרגיה: ${F(num(dE,3)+'%')}</b>${kep}${S.msg?` · <b>${S.msg}</b>`:''}<br><span style="color:var(--muted)">יחידות: G·M = 1, מרחק התחלתי 1, מהירות מעגלית 1.</span>`; }
+};
+
+SIMS.dipole = {
+  params:[{k:'q1',l:'מטען שמאלי q₁',u:'',min:-5,max:5,st:1,v:3},{k:'q2',l:'מטען ימני q₂',u:'',min:-5,max:5,st:1,v:1},{k:'d',l:'מרחק בין המטענים',u:'',min:1,max:6,st:.5,v:3}],
+  E(x,y,Q){ let ex=0,ey=0; Q.forEach(c=>{ const dx=x-c.x,dy=y-c.y,r2=dx*dx+dy*dy,r3=Math.pow(r2,1.5)||1e-9; ex+=c.q*dx/r3; ey+=c.q*dy/r3; }); return [ex,ey]; },
+  draw(ctx,w,h,p,C){
+    const Q=[{x:-p.d/2,y:0,q:p.q1},{x:p.d/2,y:0,q:p.q2}].filter(c=>c.q!==0);
+    const sc=w/12, cx=w/2, cy=h/2, Xw=x=>cx-x*sc, Yw=y=>cy-y*sc; // Xw mirrors so q1 is on the left visually? keep LTR: use cx+x*sc
+    const X=x=>cx+x*sc, Y=y=>cy-y*sc, hw=w/2/sc, hh=h/2/sc;
+    // arrows
+    const step=Math.max(28,w/22);
+    for(let px=step/2;px<w;px+=step) for(let py=step/2;py<h;py+=step){
+      const x=(px-cx)/sc, y=(cy-py)/sc; if(Q.some(c=>Math.hypot(x-c.x,y-c.y)<.35)) continue;
+      const [ex,ey]=this.E(x,y,Q), m=Math.hypot(ex,ey); if(m===0) continue; const al=Math.min(.9,Math.max(.12,.25+.15*Math.log10(m*10)));
+      const ux=ex/m, uy=ey/m, L=step*.38; ctx.strokeStyle=C.muted; ctx.globalAlpha=al; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(px-ux*L,py+uy*L); ctx.lineTo(px+ux*L,py-uy*L); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px+ux*L,py-uy*L); ctx.lineTo(px+ux*L-(ux*.5-uy*.35)*L*.8,py-uy*L+(uy*.5+ux*.35)*L*.8); ctx.lineTo(px+ux*L-(ux*.5+uy*.35)*L*.8,py-uy*L+(uy*.5-ux*.35)*L*.8); ctx.closePath(); ctx.fillStyle=C.muted; ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // field lines
+    const pos=Q.filter(c=>c.q>0), src=pos.length?pos:Q, sgn=pos.length?1:-1;
+    ctx.strokeStyle=C.s[0]; ctx.lineWidth=1.6;
+    src.forEach(c=>{ const nL=Math.round(4*Math.abs(c.q)); for(let i=0;i<nL;i++){ const an=2*PI*(i+.5)/nL; let x=c.x+.12*Math.cos(an), y=c.y+.12*Math.sin(an);
+      ctx.beginPath(); ctx.moveTo(X(x),Y(y));
+      for(let s=0;s<2500;s++){ const [ex,ey]=this.E(x,y,Q), m=Math.hypot(ex,ey); if(m===0) break; x+=sgn*.025*ex/m; y+=sgn*.025*ey/m; ctx.lineTo(X(x),Y(y));
+        if(Math.abs(x)>hw+1||Math.abs(y)>hh+1) break; if(Q.some(o=>o!==c&&Math.hypot(x-o.x,y-o.y)<.1)) break; }
+      ctx.stroke(); } });
+    // charges
+    [{x:-p.d/2,q:p.q1},{x:p.d/2,q:p.q2}].forEach(c=>{ ctx.fillStyle=c.q>0?C.s[1]:c.q<0?C.s[0]:C.muted; ctx.beginPath(); ctx.arc(X(c.x),Y(0),11,0,7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 14px Segoe UI, Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(c.q>0?'+':c.q<0?'−':'0',X(c.x),Y(0)+1); });
+    // zero points on axis
+    const zs=[]; let prev=null; for(let x=-12;x<=12;x+=.002){ if(Q.some(c=>Math.abs(x-c.x)<.02)){prev=null;continue;} const ex=this.E(x,0,Q)[0]; if(prev!==null&&Math.sign(ex)!==Math.sign(prev)&&ex!==0) zs.push(x); prev=ex; }
+    ctx.fillStyle=C.s[2]; zs.forEach(z=>{ if(Math.abs(z)<hw){ ctx.beginPath(); ctx.arc(X(z),Y(0),5,0,7); ctx.fill(); } });
+    const L1=-p.d/2;
+    return `נקודות שבהן השדה מתאפס על הציר: ${zs.length?zs.map(z=>F('x = '+num(z,2)+` (מרחק ${num(z-L1,2)} מ-q₁)`)).join(', '):'<b>אין</b>'} (מסומנות בירוק) · מטען כולל: ${F(String(p.q1+p.q2))} <br><span style="color:var(--muted)">q₁ משמאל ו-q₂ מימין. אדום: מטען חיובי, כחול: מטען שלילי. החצים האפורים מראים את כיוון השדה, ובהירותם את עוצמתו.</span>`;
+  }
+};
+
+SIMS.deflect = {
+  params:[{k:'Va',l:'מתח האצה Vₐ',u:'V',min:200,max:3000,st:50,v:1000},{k:'V',l:'מתח הטיה V',u:'V',min:0,max:300,st:5,v:50},{k:'Lp',l:'אורך הלוחות',u:'cm',min:2,max:10,st:.5,v:5}],
+  run(p){
+    const e=1.602e-19, me=9.109e-31, d=.02, L=p.Lp/100, D=.2, v0=Math.sqrt(2*e*p.Va/me);
+    const yIn=x=>p.V*x*x/(4*d*p.Va); let hit=null; if(p.V>0){ const xh=d*Math.sqrt(2*p.Va/p.V); if(xh<L) hit=xh; }
+    const pts=[]; const xend=hit!==null?hit:L;
+    for(let i=0;i<=100;i++){ const x=xend*i/100; pts.push([x*100,yIn(x)*100]); }
+    let ys=null; if(hit===null){ const y1=yIn(L), sl=p.V*L/(2*d*p.Va); ys=y1+sl*D; pts.push([(L+D)*100,ys*100]); }
+    const plates=[{n:'לוחות',c:'#888',pts:[[0,1],[p.Lp,1]],w:4},{c:'#888',pts:[[0,-1],[p.Lp,-1]],w:4}];
+    return {plots:[{xl:'x (cm)',yl:'y (cm)',x:[0,(L+D)*100+1],series:[...plates,{n:'מסלול האלקטרון',c:0,pts}],vl:[{x:(L+D)*100,label:'מסך'}],y0zero:0}],
+      info:`מהירות בכניסה: ${F(num(v0/1e7,2)+'·10⁷ m/s')} · זמן בין הלוחות: ${F(num(L/v0*1e9,2)+' ns')} · ${hit!==null?`<b>האלקטרון פוגע בלוח</b> אחרי ${F(num(hit*100,2)+' cm')}`:`הטיה על המסך: <b>${F(num(ys*100,2)+' cm')}</b> · רגישות: ${F(num(ys*100/Math.max(p.V,1e-9),4)+' cm/V')}`}`};
+  }
+};
+
+SIMS.rc = {
+  params:[{k:'mode',l:'מצב',opts:['טעינה','פריקה דרך R'],v:0},{k:'R',l:'התנגדות R',u:'kΩ',min:1,max:20,st:.5,v:5},{k:'r',l:'התנגדות פנימית r',u:'kΩ',min:0,max:10,st:.5,v:1},{k:'C',l:'קיבול C',u:'µF',min:100,max:2000,st:50,v:1000},{k:'h',l:'צעד אוילר (ביחס ל-τ)',u:'τ',min:.05,max:2.5,st:.05,v:.5}],
+  run(p){
+    const eps=12, R=p.R*1e3, r=p.r*1e3, C=p.C*1e-6, ch=p.mode===0, tau=ch?(R+r)*C:R*C, T=6*tau;
+    const ex=[],term=[],I=[],eu=[]; for(let i=0;i<=300;i++){ const t=T*i/300; const Vc=ch?eps*(1-Math.exp(-t/tau)):eps*Math.exp(-t/tau); const cur=ch?(eps-Vc)/(R+r):Vc/R; ex.push([t,Vc]); I.push([t,cur*1e3]); if(ch) term.push([t,eps-cur*r]); }
+    const dt=p.h*tau; let V=ch?0:eps, maxErr=0, maxV=V; for(let t=0;t<=T+1e-9;t+=dt){ eu.push([t,V]); const exact=ch?eps*(1-Math.exp(-t/tau)):eps*Math.exp(-t/tau); maxErr=Math.max(maxErr,Math.abs(V-exact)); maxV=Math.max(maxV,V); V+= (ch?(eps-V)/((R+r)*C):-V/(R*C))*dt; }
+    const series=[{n:'מתח על הקבל (מדויק)',c:0,pts:ex},{n:'אוילר',c:1,pts:eu,dash:1,dots:1}]; if(ch) series.push({n:'מתח הדקים',c:2,pts:term});
+    let warn=''; if(p.h>2) warn=' · <b>הפתרון הנומרי מתבדר!</b>'; else if(p.h>1) warn=' · <b>אוילר "מטעין" מעבר לכא"מ</b>';
+    return {plots:[{xl:'t (s)',yl:'V (V)',series,y:[Math.min(-1,...eu.map(q=>q[1]).filter(isFinite).map(v=>Math.max(v,-30))),Math.max(13,Math.min(30,maxV+1))]},{xl:'t (s)',yl:'I (mA)',series:[{n:'זרם',c:3,pts:I}],y0zero:1}],
+      info:`${F('τ = '+num(tau,2)+' s')} ${ch?`= ${F('(R + r)·C')}`:`= ${F('R·C')}`} · זרם התחלתי: ${F(num((ch?eps/(R+r):eps/R)*1e3,2)+' mA')}${ch?` · מתח הדקים התחלתי: ${F(num(eps*R/(R+r),2)+' V')}`:''} · שגיאת אוילר מרבית: <b>${F(isFinite(maxErr)?num(maxErr,2)+' V':'∞')}</b>${warn}`};
+  }
+};
+
+SIMS.crossed = {
+  params:[{k:'B',l:'שדה מגנטי B',u:'',min:.2,max:2,st:.05,v:1},{k:'E',l:'שדה חשמלי E',u:'',min:0,max:2,st:.05,v:.5},{k:'v0',l:'מהירות התחלתית v₀',u:'',min:-2,max:3,st:.05,v:0},{k:'T',l:'משך',u:'',min:5,max:40,st:1,v:20}],
+  run(p){
+    const f=(s)=>[s[2],s[3],s[3]*p.B, p.E-s[2]*p.B]; let s=[0,0,p.v0,0]; const dt=.004, pts=[[0,0]]; let maxDev=0; const sp0=Math.abs(p.v0);
+    for(let i=1;i*dt<=p.T;i++){ const k1=f(s),k2=f(s.map((v,j)=>v+k1[j]*dt/2)),k3=f(s.map((v,j)=>v+k2[j]*dt/2)),k4=f(s.map((v,j)=>v+k3[j]*dt)); s=s.map((v,j)=>v+dt/6*(k1[j]+2*k2[j]+2*k3[j]+k4[j]));
+      if(i%5===0) pts.push([s[0],s[1]]); if(p.E===0) maxDev=Math.max(maxDev,Math.abs(Math.hypot(s[2],s[3])-sp0)); }
+    const vd=p.E/p.B, rg=Math.abs(p.v0-vd)/p.B;
+    return {plots:[{xl:'x',yl:'y',series:[{n:'מסלול החלקיק',c:0,pts}],marks:[[0,0,1]]}],
+      info:`מהירות סחיפה ${F('E/B = '+num(vd,3))} · רדיוס סיבוב סביב מרכז הסחיפה ${F('|v₀ − E/B|/B = '+num(rg,3))}${Math.abs(p.v0-vd)<.026?' · <b>תנועה בקו ישר (בורר מהירויות)</b>':''}${p.E===0?` · סטייה מרבית בגודל המהירות: ${F(num(maxDev,6))}`:''}<br><span style="color:var(--muted)">יחידות מנורמלות: q = m = 1. B בכיוון z (אל מחוץ למסך), E בכיוון y.</span>`};
+  }
+};
+
+SIMS.rails = {
+  params:[{k:'m',l:'מסת המוט',u:'kg',min:.1,max:2,st:.05,v:.5},{k:'F',l:'כוח מושך F',u:'N',min:0,max:5,st:.1,v:2},{k:'B',l:'שדה מגנטי B',u:'T',min:0,max:2,st:.05,v:1},{k:'R',l:'התנגדות R',u:'Ω',min:.5,max:10,st:.1,v:2}],
+  run(p){
+    const L=.5, k=p.B*p.B*L*L/p.R, tau=k>0?p.m/k:Infinity, vt=k>0?p.F/k:Infinity, T=isFinite(tau)?Math.min(60,5*tau):10, dt=T/4000;
+    let v=0; const V=[],I=[],Pm=[],Pe=[];
+    for(let i=0;i<=4000;i++){ const t=i*dt, cur=p.B*L*v/p.R; if(i%10===0){ V.push([t,v]); I.push([t,cur]); Pm.push([t,p.F*v]); Pe.push([t,cur*cur*p.R]); } v+=(p.F-k*v)/p.m*dt; }
+    return {plots:[{xl:'t (s)',yl:'v (m/s), I (A)',series:[{n:'מהירות',c:0,pts:V},{n:'זרם',c:1,pts:I}],hl:isFinite(vt)?[{y:vt,label:'vₜ'}]:[],y0zero:1},{xl:'t (s)',yl:'P (W)',series:[{n:'הספק מכני F·v',c:2,pts:Pm},{n:'הספק חשמלי I²R',c:3,pts:Pe,dash:1}],y0zero:1}],
+      info:`מהירות גבולית ${F('FR/(B²L²) = '+(isFinite(vt)?num(vt,2)+' m/s':'∞'))} · קבוע זמן ${F('mR/(B²L²) = '+(isFinite(tau)?num(tau,2)+' s':'∞'))} · זרם גבולי ${F(isFinite(vt)?num(p.B*L*vt/p.R,2)+' A':'—')} · אורך המוט ${F('L = 0.5 m')}`};
+  }
+};
+
+SIMS.refract = {
+  params:[{k:'n1',l:'מקדם שבירה בתווך העליון n₁',u:'',min:1,max:2.5,st:.01,v:1.5},{k:'n2',l:'מקדם שבירה בתווך התחתון n₂',u:'',min:1,max:2.5,st:.01,v:1},{k:'a',l:'זווית פגיעה',u:'°',min:0,max:89,st:1,v:30}],
+  fres(n1,n2,ai){ const s=n1/n2*Math.sin(ai); if(s>1) return {R:1,T:0,at:null}; const at=Math.asin(s), ci=Math.cos(ai), ct=Math.cos(at);
+    const rs=(n1*ci-n2*ct)/(n1*ci+n2*ct), rp=(n1*ct-n2*ci)/(n1*ct+n2*ci); const R=(rs*rs+rp*rp)/2; return {R,T:1-R,at}; },
+  draw(ctx,w,h,p,C){
+    const cx=w/2, cy=h/2, L=Math.min(w,h)*.45, ai=p.a*PI/180, fr=this.fres(p.n1,p.n2,ai);
+    ctx.fillStyle=C.accent; ctx.globalAlpha=.04+.1*(p.n1-1); ctx.fillRect(0,0,w,cy); ctx.globalAlpha=.04+.1*(p.n2-1); ctx.fillRect(0,cy,w,h-cy); ctx.globalAlpha=1;
+    ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke();
+    ctx.strokeStyle=C.muted; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(cx,cy-L); ctx.lineTo(cx,cy+L); ctx.stroke(); ctx.setLineDash([]);
+    const ray=(x1,y1,x2,y2,al,col)=>{ ctx.globalAlpha=Math.max(.08,al); ctx.strokeStyle=col; ctx.lineWidth=2+4*al; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      const an=Math.atan2(y2-y1,x2-x1), mx=(x1+x2)/2, my=(y1+y2)/2; ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(mx+10*Math.cos(an),my+10*Math.sin(an)); ctx.lineTo(mx-6*Math.cos(an)+6*Math.sin(an),my-6*Math.sin(an)-6*Math.cos(an)); ctx.lineTo(mx-6*Math.cos(an)-6*Math.sin(an),my-6*Math.sin(an)+6*Math.cos(an)); ctx.fill(); ctx.globalAlpha=1; };
+    ray(cx-L*Math.sin(ai),cy-L*Math.cos(ai),cx,cy,1,C.s[3]);
+    ray(cx,cy,cx+L*Math.sin(ai),cy-L*Math.cos(ai),fr.R,C.s[1]);
+    if(fr.at!==null) ray(cx,cy,cx+L*Math.sin(fr.at),cy+L*Math.cos(fr.at),fr.T,C.s[0]);
+    ctx.fillStyle=C.muted; ctx.font='13px Segoe UI, Arial'; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('n₁ = '+p.n1.toFixed(2),8,8); ctx.textBaseline='bottom'; ctx.fillText('n₂ = '+p.n2.toFixed(2),8,h-8);
+    const crit=p.n1>p.n2?Math.asin(p.n2/p.n1)*180/PI:null;
+    return `זווית שבירה: <b>${fr.at!==null?F(num(fr.at*180/PI,1)+'°'):'אין: החזרה מלאה'}</b> · זווית גבול: ${crit!==null?F(num(crit,1)+'°'):'לא קיימת (n₁ ≤ n₂)'} · אור מוחזר: <b>${F(num(100*fr.R,1)+'%')}</b> · אור עובר: ${F(num(100*fr.T,1)+'%')}<br><span style="color:var(--muted)">כתום: הקרן הפוגעת, אדום: המוחזרת, כחול: הנשברת. עובי הקרן ובהירותה לפי האנרגיה שהיא נושאת.</span>`;
+  },
+  run(p){ const R=[],T=[]; let crit=null; for(let a=0;a<=90;a+=.5){ const f=this.fres(p.n1,p.n2,Math.min(a,89.99)*PI/180); R.push([a,100*f.R]); T.push([a,100*f.T]); }
+    if(p.n1>p.n2) crit=Math.asin(p.n2/p.n1)*180/PI;
+    const vl=[{x:p.a,label:'הזווית הנוכחית',c:3}]; if(crit!==null) vl.push({x:crit,label:'זווית גבול'});
+    return {plots:[{xl:'זווית פגיעה (°)',yl:'%',x:[0,90],y:[0,100],series:[{n:'מוחזר',c:1,pts:R},{n:'עובר',c:0,pts:T}],vl}]}; }
+};
+
+SIMS.fermat = {
+  params:[{k:'n',l:'מקדם השבירה של המים n',u:'',min:1,max:2.4,st:.01,v:1.33}],
+  calc(n){ const tw=x=>Math.hypot(x,1)+n*Math.hypot(2-x,1), tp=x=>Math.hypot(x,1)+Math.hypot(2-x,1)/n;
+    let lo=0,hi=2; for(let i=0;i<60;i++){ const m=(lo+hi)/2; const l=m/Math.hypot(m,1), r=n*(2-m)/Math.hypot(2-m,1); if(l<r) lo=m; else hi=m; } const xs=(lo+hi)/2;
+    let mw=0,mp=0,bw=1e9,bp=1e9; for(let x=0;x<=2;x+=.0005){ const a=tw(x),b=tp(x); if(a<bw){bw=a;mw=x;} if(b<bp){bp=b;mp=x;} } return {tw,tp,xs,mw,mp}; },
+  draw(ctx,w,h,p,C){ const c=this.calc(p.n); const sc=Math.min(w/3,h/2.6), ox=w/2-sc, oy=h/2, X=x=>ox+x*sc, Y=y=>oy-y*sc;
+    ctx.fillStyle=C.accent; ctx.globalAlpha=.12; ctx.fillRect(0,oy,w,h-oy); ctx.globalAlpha=1;
+    ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,oy); ctx.lineTo(w,oy); ctx.stroke();
+    const path=(x,col,dash)=>{ ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.setLineDash(dash?[6,4]:[]); ctx.beginPath(); ctx.moveTo(X(0),Y(1)); ctx.lineTo(X(x),Y(0)); ctx.lineTo(X(2),Y(-1)); ctx.stroke(); ctx.setLineDash([]); };
+    ctx.globalAlpha=.35; path(1,C.muted,1); ctx.globalAlpha=1; path(c.mw,C.s[0],0); path(c.mp,C.s[1],1);
+    ctx.fillStyle=C.s[3]; ctx.beginPath(); ctx.arc(X(c.xs),Y(0),5,0,7); ctx.fill();
+    ctx.fillStyle=C.ink; ctx.font='bold 14px Segoe UI, Arial'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText('A',X(0),Y(1)-6); ctx.textBaseline='top'; ctx.fillText('B',X(2),Y(-1)+6);
+    ctx.font='12px Segoe UI, Arial'; ctx.fillStyle=C.muted; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('אוויר',8,8); ctx.textBaseline='bottom'; ctx.fillText('מים',8,h-8);
+    ctx.beginPath(); ctx.arc(X(0),Y(1),4,0,7); ctx.arc(X(2),Y(-1),4,0,7); ctx.fillStyle=C.ink; ctx.fill();
+    return `נקודת החצייה לפי חוק סנל: <b>${F('x = '+num(c.xs,3)+' m')}</b> (צהוב) · מינימום הזמן במודל הגלי: ${F('x = '+num(c.mw,3)+' m')} (כחול) · מינימום הזמן במודל החלקיקי: ${F('x = '+num(c.mp,3)+' m')} (אדום, מקווקו)`; },
+  run(p){ const c=this.calc(p.n), W=[],P=[]; for(let x=0;x<=2;x+=.01){ W.push([x,c.tw(x)]); P.push([x,c.tp(x)]); }
+    return {plots:[{xl:'נקודת החצייה x (m)',yl:'זמן (יחידות של m/c)',series:[{n:'מודל גלי (c/n במים)',c:0,pts:W},{n:'מודל חלקיקי (n·c במים)',c:1,pts:P,dash:1}],vl:[{x:c.xs,label:'חוק סנל',c:3}],marks:[[c.mw,c.tw(c.mw),0],[c.mp,c.tp(c.mp),1]]}]}; }
+};
+
+function lamColor(nm){ let r=0,g2=0,b=0; if(nm<380||nm>750) return null;
+  if(nm<440){r=-(nm-440)/60;b=1;} else if(nm<490){g2=(nm-440)/50;b=1;} else if(nm<510){g2=1;b=-(nm-510)/20;} else if(nm<580){r=(nm-510)/70;g2=1;} else if(nm<645){r=1;g2=-(nm-645)/65;} else r=1;
+  const f=nm<420?.3+.7*(nm-380)/40:nm>700?.3+.7*(750-nm)/50:1; const c=v=>Math.round(255*Math.pow(v*f,.8)); return `rgb(${c(r)},${c(g2)},${c(b)})`; }
+
+SIMS.slits = {
+  params:[{k:'lam',l:'אורך גל λ',u:'nm',min:400,max:700,st:5,v:600},{k:'d',l:'מרחק בין הסדקים d',u:'mm',min:.05,max:1,st:.01,v:.2},{k:'a',l:'רוחב סדק a',u:'mm',min:.01,max:.2,st:.005,v:.04}],
+  run(p){ const lam=p.lam*1e-9, L=1, d=p.d*1e-3, a=Math.min(p.a,p.d*.95)*1e-3, ymax=Math.min(40,Math.max(6,2.2*lam*L/a*1e3));
+    const I=[],Env=[]; for(let i=0;i<=2400;i++){ const y=-ymax+2*ymax*i/2400, ym=y*1e-3, be=PI*a*ym/(lam*L), s=be===0?1:Math.sin(be)/be, env=s*s; Env.push([y,env]); I.push([y,env*Math.cos(PI*d*ym/(lam*L))**2]); }
+    const col=lamColor(p.lam)||0, ratio=d/a, rr=Math.round(ratio);
+    return {plots:[{xl:'מקום על המסך y (mm)',yl:'עוצמה יחסית',y:[0,1.05],series:[{n:'מעטפת סדק יחיד',c:'#999',pts:Env,dash:1},{n:'שני סדקים',c:col,pts:I}]}],
+      info:`מרחק בין פסים ${F('λL/d = '+num(lam*L/d*1e3,2)+' mm')} · מינימום ראשון של המעטפת ${F('λL/a = '+num(lam*L/a*1e3,2)+' mm')} · ${F('d/a = '+num(ratio,2))}${Math.abs(ratio-rr)<.05?` · <b>סדרים חסרים: ${rr}, ${2*rr}, ${3*rr}…</b>`:''}${p.a>=p.d?' · (רוחב הסדק הוגבל ל-95% מ-d)':''}`};
+  }
+};
+
+SIMS.photo = {
+  params:[{k:'f',l:'תדירות האור',u:'×10¹⁴ Hz',min:3,max:15,st:.1,v:8},{k:'I',l:'עוצמת האור',u:'',min:.2,max:2,st:.1,v:1},{k:'met',l:'מתכת',opts:['צזיום (2.14 eV)','נתרן (2.28 eV)','אבץ (4.33 eV)','פלטינה (5.65 eV)'],v:1}],
+  W:[2.14,2.28,4.33,5.65],
+  run(p){ const h=4.1357e-15, W=this.W[p.met], hf=h*p.f*1e14, K=hf-W;
+    const cur=(V,I)=> K<=0?0 : V>=0?I : (V>-K? I*(1+V/K):0);
+    const A=[],B=[]; for(let V=-6;V<=3;V+=.01){ A.push([V,cur(V,p.I)]); B.push([V,cur(V,p.I/2)]); }
+    const f0=W/h/1e14, line=[]; for(let f=f0;f<=16;f+=.1) line.push([f,h*f*1e14-W]);
+    return {plots:[{xl:'מתח בין הקולט לפולט V (V)',yl:'זרם (יחידות יחסיות)',y:[0,2.1],series:[{n:'העוצמה הנוכחית',c:0,pts:A},{n:'חצי עוצמה',c:1,pts:B,dash:1}]},
+                   {xl:'תדירות (×10¹⁴ Hz)',yl:'Eₖ,max (eV)',x:[3,16],y:[0,Math.max(2,h*16e14-W)],series:[{n:'Eₖ,max = hf − B',c:2,pts:line}],marks:K>0?[[p.f,K,3]]:[],vl:[{x:f0,label:'תדירות סף'}]}],
+      info:`אנרגיית פוטון ${F('hf = '+num(hf,2)+' eV')} · ${K>0?`אנרגיה קינטית מרבית <b>${F(num(K,2)+' eV')}</b> · מתח עצירה <b>${F(num(K,2)+' V')}</b>`:'<b>מתחת לתדירות הסף: אין פליטת אלקטרונים בשום עוצמה</b>'} · תדירות סף ${F(num(f0,2)+'·10¹⁴ Hz')} (אורך גל ${F(num(3e8/(f0*1e14)*1e9,0)+' nm')})`};
+  }
+};
+
+SIMS.bohr = {
+  params:[{k:'Z',l:'מספר אטומי Z',opts:['מימן H (Z = 1)','He⁺ (Z = 2)','Li²⁺ (Z = 3)'],v:0},{k:'nf',l:'רמת היעד (סדרה)',u:'',min:1,max:4,st:1,v:2}],
+  draw(ctx,w,h,p,C){
+    const Z=p.Z+1, nf=p.nf, R=1.0968e7, lines=[]; for(let ni=nf+1;ni<=nf+8;ni++) lines.push({ni,l:1e9/(R*Z*Z*(1/(nf*nf)-1/(ni*ni)))});
+    const lim=1e9/(R*Z*Z/(nf*nf));
+    // level diagram
+    const dw=Math.min(w*.32,220), top=20, bot=h-30, E1=-13.6*Z*Z, Ey=E=>top+(bot-top)*(E/E1);
+    ctx.font='11px Segoe UI, Arial'; ctx.textBaseline='middle';
+    for(let n=1;n<=7;n++){ const E=n===7?0:E1/(n*n), y=Ey(E); ctx.strokeStyle=n===nf?C.s[3]:C.muted; ctx.lineWidth=n===nf?2.5:1; ctx.setLineDash(n===7?[4,3]:[]); ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(dw,y); ctx.stroke(); ctx.setLineDash([]); if(n<=4||n===7){ ctx.fillStyle=C.muted; ctx.textAlign='right'; ctx.fillText((n===7?'∞ ':'n='+n+' '),38,y); } }
+    lines.slice(0,5).forEach((L,i)=>{ const x=55+i*(dw-65)/5, y1=Ey(E1/(L.ni*L.ni)), y2=Ey(E1/(nf*nf)); ctx.strokeStyle=lamColor(L.l)||C.s[0]; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,y1); ctx.lineTo(x,y2-4); ctx.stroke(); ctx.fillStyle=ctx.strokeStyle; ctx.beginPath(); ctx.moveTo(x,y2); ctx.lineTo(x-4,y2-8); ctx.lineTo(x+4,y2-8); ctx.fill(); });
+    ctx.fillStyle=C.muted; ctx.textAlign='left'; ctx.fillText(num(E1,1)+' eV',dw+4,Ey(E1));
+    // spectrum strip (log)
+    const sx=dw+60, sw=w-sx-14, sy=h*.35, sh=h*.3, lmin=Math.log10(10), lmax=Math.log10(5000), Xl=l=>sx+(Math.log10(l)-lmin)/(lmax-lmin)*sw;
+    ctx.fillStyle='#111'; ctx.fillRect(sx,sy,sw,sh);
+    ctx.globalAlpha=.25; for(let l=380;l<=750;l+=5){ ctx.fillStyle=lamColor(l); ctx.fillRect(Xl(l),sy,Xl(l+5)-Xl(l)+.5,sh); } ctx.globalAlpha=1;
+    lines.forEach(L=>{ if(L.l<10||L.l>5000) return; ctx.strokeStyle=lamColor(L.l)||'#ddd'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(Xl(L.l),sy); ctx.lineTo(Xl(L.l),sy+sh); ctx.stroke(); });
+    ctx.strokeStyle='#fff'; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(Xl(lim),sy); ctx.lineTo(Xl(lim),sy+sh); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.textBaseline='top'; [10,30,100,300,1000,3000].forEach(l=>ctx.fillText(l+' nm',Xl(l),sy+sh+4));
+    ctx.textBaseline='bottom'; ctx.fillText('על-סגול',(Xl(10)+Xl(380))/2,sy-4); ctx.fillText('נראה',(Xl(380)+Xl(750))/2,sy-4); ctx.fillText('תת-אדום',(Xl(750)+Xl(5000))/2,sy-4);
+    const reg=l=>l<380?'על-סגול':l<=750?'<b>נראה</b>':'תת-אדום';
+    return `הסדרה ל-${F('n = '+nf)} (${['לימן','בלמר','פשן','ברקט'][nf-1]}${Z>1?', עבור Z = '+Z:''}): ${lines.slice(0,5).map(L=>F(L.ni+'→'+nf)+' '+F(num(L.l,1)+' nm')+' '+reg(L.l)).join(' · ')} · גבול הסדרה: ${F(num(lim,1)+' nm')}`;
+  }
+};
+
+SIMS.electrons = {
+  anim:true,
+  params:[{k:'V',l:'מתח האצה',u:'V',min:20,max:2000,st:10,v:100},{k:'d',l:'מרחק בין הסדקים',u:'nm',min:1,max:20,st:.5,v:4},{k:'det',l:'גלאי נתיב',opts:['כבוי: לא יודעים דרך איזה סדק','מופעל: יודעים דרך איזה סדק'],v:0},{k:'rate',l:'אלקטרונים לשנייה',u:'',min:1,max:400,st:1,v:40}],
+  P(s,p,lam){ const a=p.d/5, be=PI*a*s/lam, env=be===0?1:(Math.sin(be)/be)**2; return p.det===1?env:env*Math.cos(PI*p.d*s/lam)**2; },
+  init(p){ return {hits:[],acc:0,bins:new Array(150).fill(0),lam:1.226/Math.sqrt(p.V)}; },
+  step(S,dt,p){ S.acc+=p.rate*dt; while(S.acc>=1&&S.hits.length<20000){ S.acc-=1; let s; do{ s=-.2+.4*Math.random(); }while(Math.random()>this.P(s,p,S.lam)); S.hits.push([s,Math.random()]); S.bins[Math.min(149,Math.floor((s+.2)/.4*150))]++; } if(S.hits.length>=20000) S.done=true; },
+  draw(ctx,w,h,S,p,C){ const top=h*.62; ctx.fillStyle='#0d1018'; ctx.fillRect(0,0,w,top);
+    ctx.fillStyle='rgba(120,220,255,0.85)'; const X=s=>(s+.2)/.4*w; S.hits.forEach(q=>{ ctx.fillRect(X(q[0])-1,q[1]*(top-4)+2,2,2); });
+    const mx=Math.max(1,...S.bins), bw=w/150; ctx.fillStyle=C.s[0]; ctx.globalAlpha=.75; S.bins.forEach((b,i)=>{ const hh=(h-top-18)*b/mx; ctx.fillRect(i*bw,h-14-hh,bw-.5,hh); }); ctx.globalAlpha=1;
+    if(S.hits.length>200){ let pm=0; for(let i=0;i<150;i++) pm=Math.max(pm,this.P(-.2+.4*(i+.5)/150,p,S.lam)); ctx.strokeStyle=C.s[1]; ctx.lineWidth=1.5; ctx.beginPath(); for(let i=0;i<=300;i++){ const s=-.2+.4*i/300, y=h-14-(h-top-18)*this.P(s,p,S.lam)/pm; i?ctx.lineTo(X(s),y):ctx.moveTo(X(s),y);} ctx.stroke(); }
+    ctx.fillStyle=C.muted; ctx.font='11px Segoe UI, Arial'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText('sinθ = 0',w/2,h-1); ctx.textAlign='left'; ctx.fillText('−0.2',2,h-1); ctx.textAlign='right'; ctx.fillText('+0.2',w-2,h-1); },
+  info(S,p){ return `אלקטרונים שפגעו: <b>${F(String(S.hits.length))}</b> · אורך גל דה-ברויי ${F('λ = h/√(2meV) = '+num(S.lam,4)+' nm')} · מרווח בין פסים ${F('sinθ ≈ λ/d = '+num(S.lam/p.d,4))}${p.det===1?' · <b>גלאי הנתיב מופעל: מחברים הסתברויות ואין התאבכות</b>':''}<br><span style="color:var(--muted)">למעלה: נקודות הפגיעה על המסך. למטה: היסטוגרמה של הפגיעות, והקו האדום הוא ההתפלגות התאורטית (מופיע אחרי 200 פגיעות).</span>`; }
+};
+
+SIMS.decay = {
+  random:true,
+  params:[{k:'N0',l:'מספר גרעינים התחלתי N₀',u:'',min:10,max:5000,st:10,v:1000},{k:'TA',l:'זמן מחצית חיים של A',u:'min',min:1,max:20,st:.5,v:5},{k:'TB',l:'זמן מחצית חיים של B',u:'min',min:.5,max:20,st:.5,v:2}],
+  binom(n,q){ if(n<=0) return 0; if(n<60){ let k=0; for(let i=0;i<n;i++) if(Math.random()<q) k++; return k; } const m=n*q, s=Math.sqrt(n*q*(1-q)); let u=0,v=0; while(u===0)u=Math.random(); v=Math.random(); const z=Math.sqrt(-2*Math.log(u))*Math.cos(2*PI*v); return Math.max(0,Math.min(n,Math.round(m+s*z))); },
+  run(p){ const lA=Math.LN2/p.TA, lB=Math.LN2/p.TB, Tend=Math.min(120,5*Math.max(p.TA,p.TB)+p.TA), dt=Math.min(p.TA,p.TB)/60;
+    let a=p.N0,b=0,c=0, bMax=0,tbMax=0; const A=[],B=[],Cc=[],aA=[],aB=[],aC=[];
+    const nA=t=>p.N0*Math.exp(-lA*t), nB=t=>Math.abs(lA-lB)<1e-9?p.N0*lA*t*Math.exp(-lA*t):p.N0*lA/(lB-lA)*(Math.exp(-lA*t)-Math.exp(-lB*t));
+    const qa=1-Math.exp(-lA*dt), qb=1-Math.exp(-lB*dt);
+    for(let i=0,t=0;t<=Tend;i++,t=i*dt){ if(i%3===0){ A.push([t,a]); B.push([t,b]); Cc.push([t,c]); aA.push([t,nA(t)]); aB.push([t,nB(t)]); aC.push([t,p.N0-nA(t)-nB(t)]); } if(b>bMax){bMax=b;tbMax=t;}
+      const da=this.binom(a,qa), db=this.binom(b,qb); a-=da; b+=da-db; c+=db; }
+    const tPeak=Math.abs(lA-lB)<1e-9?1/lA:Math.log(lA/lB)/(lA-lB);
+    return {plots:[{xl:'t (min)',yl:'מספר גרעינים',y:[0,p.N0*1.05],series:[{n:'A',c:0,pts:A},{n:'B',c:1,pts:B},{n:'C (יציב)',c:2,pts:Cc},{c:0,pts:aA,dash:1,w:1.5},{c:1,pts:aB,dash:1,w:1.5},{c:2,pts:aC,dash:1,w:1.5}],vl:[{x:tPeak,label:'שיא B (תאוריה)'}]}],
+      info:`הקווים הרציפים: מונטה-קרלו, המקווקווים: פתרון אנליטי · שיא B לפי התאוריה: ${F('t = ln(λA/λB)/(λA − λB) = '+num(tPeak,2)+' min')} · שיא B בסימולציה: ${F(num(tbMax,2)+' min')} (${F(String(bMax))} גרעינים)`};
+  }
+};
+
+/* ============================== START ============================== */
+route();
+</script>
+</body>
+</html>
